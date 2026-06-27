@@ -17,6 +17,7 @@
 
     <!-- Firebase Compat SDKs (CDN) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <script>
@@ -107,50 +108,6 @@
             };
         };
 
-        const hslToHex = (h, s, l) => {
-            h = (h % 360 + 360) % 360;
-            s /= 100;
-            l /= 100;
-
-            const c = (1 - Math.abs(2 * l - 1)) * s;
-            const x = c * (1 - Math.abs((h / 60) % 2 - 1));
-            const m = l - c / 2;
-            let r = 0, g = 0, b = 0;
-
-            if (0 <= h && h < 60) {
-                r = c; g = x; b = 0;
-            } else if (60 <= h && h < 120) {
-                r = x; g = c; b = 0;
-            } else if (120 <= h && h < 180) {
-                r = 0; g = c; b = x;
-            } else if (180 <= h && h < 240) {
-                r = 0; g = x; b = c;
-            } else if (240 <= h && h < 300) {
-                r = x; g = 0; b = c;
-            } else if (300 <= h && h < 360) {
-                r = c; g = 0; b = x;
-            }
-
-            return rgbToHex((r + m) * 255, (g + m) * 255, (b + m) * 255);
-        };
-
-        const getLuminance = (r, g, b) => {
-            const [rs, gs, bs] = [r/255, g/255, b/255].map(c => 
-                c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
-            );
-            return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
-        };
-
-        const getContrastRatio = (hex1, hex2) => {
-            const rgb1 = hexToRgb(hex1);
-            const rgb2 = hexToRgb(hex2);
-            const l1 = getLuminance(rgb1.r, rgb1.g, rgb1.b);
-            const l2 = getLuminance(rgb2.r, rgb2.g, rgb2.b);
-            const lighter = Math.max(l1, l2);
-            const darker = Math.min(l1, l2);
-            return ((lighter + 0.05) / (darker + 0.05)).toFixed(2);
-        };
-
         const getOptimalTextColor = (hex) => {
             if (!hex || hex.length !== 7) return '#FFFFFF';
             const rgb = hexToRgb(hex);
@@ -158,6 +115,13 @@
             const contrastWhite = (1 + 0.05) / (lum + 0.05);
             const contrastBlack = (lum + 0.05) / (0.015 + 0.05);
             return contrastWhite > contrastBlack ? '#FFFFFF' : '#111827';
+        };
+
+        const getLuminance = (r, g, b) => {
+            const [rs, gs, bs] = [r/255, g/255, b/255].map(c => 
+                c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+            );
+            return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
         };
 
         const getHarmonyCategory = (hex) => {
@@ -183,14 +147,12 @@
                 'search': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>,
                 'refresh': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>,
                 'trash': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>,
-                'edit': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                'edit': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>,
+                'google': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>
             };
             return icons[name] || null;
         };
 
-        // ==========================================
-        // SYSTEM LAYOUT REFERENCE DEFINITIONS
-        // ==========================================
         const LAYOUT_GROUPS = {
             BG: "Background Colors",
             HDR: "Header Colors",
@@ -236,7 +198,7 @@
             { id: "sys-sdb-1", name: "sidebar slate base", primary: "#0F172A", secondary: "#1E293B", group: LAYOUT_GROUPS.SDB, system: true },
             { id: "sys-sdb-2", name: "active link emerald", primary: "#10B981", secondary: "#059669", group: LAYOUT_GROUPS.SDB, system: true },
             { id: "sys-sdb-3", name: "active link indigo", primary: "#6366F1", secondary: "#4F46E5", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-sdb-4", name: "hover highlight gray", primary: "#1E293B", secondary: "#334155" , group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-sdb-4", name: "hover highlight gray", primary: "#1E293B", secondary: "#334155", group: LAYOUT_GROUPS.SDB, system: true },
             { id: "sys-sdb-5", name: "sidebar cobalt item", primary: "#3B82F6", secondary: "#1D4ED8", group: LAYOUT_GROUPS.SDB, system: true },
             { id: "sys-sdb-6", name: "active link ruby", primary: "#E11D48", secondary: "#BE123C", group: LAYOUT_GROUPS.SDB, system: true },
             { id: "sys-sdb-7", name: "active link cyan", primary: "#0891B2", secondary: "#0E7490", group: LAYOUT_GROUPS.SDB, system: true },
@@ -254,10 +216,7 @@
             { id: "sys-ftr-7", name: "premium gold border", primary: "#78350F", secondary: "#451A03", group: LAYOUT_GROUPS.FTR, system: true },
             { id: "sys-ftr-8", name: "cloudy neutral footer", primary: "#E2E8F0", secondary: "#CBD5E1", group: LAYOUT_GROUPS.FTR, system: true },
 
-            // ========================================================
-            // MERGED COLORS FROM OLD.HTML (122 FLAT REFERENCE COLORS)
-            // ========================================================
-            // Group 1
+            // 122 Merged colors from old.html
             { id: "sys-old-1", name: "calming purple", primary: "#9B84B8", secondary: "#9B84B8", group: LAYOUT_GROUPS.SDB, system: true },
             { id: "sys-old-2", name: "quiet Abyss", primary: "#0B101E", secondary: "#0B101E", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-3", name: "perfect peach", primary: "#FFDCB8", secondary: "#FFDCB8", group: LAYOUT_GROUPS.BG, system: true },
@@ -272,8 +231,6 @@
             { id: "sys-old-12", name: "extreme burgundy", primary: "#4A0404", secondary: "#4A0404", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-13", name: "shimmer pearl", primary: "#FDFBF7", secondary: "#FDFBF7", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-14", name: "rich maroon", primary: "#6A0C0B", secondary: "#6A0C0B", group: LAYOUT_GROUPS.BG, system: true },
-
-            // Group 2
             { id: "sys-old-15", name: "Soft yellow green", primary: "#D5E59B", secondary: "#D5E59B", group: LAYOUT_GROUPS.HDR, system: true },
             { id: "sys-old-16", name: "deep muted green", primary: "#2B4231", secondary: "#2B4231", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-17", name: "neon green", primary: "#39FF14", secondary: "#39FF14", group: LAYOUT_GROUPS.HDR, system: true },
@@ -282,8 +239,6 @@
             { id: "sys-old-20", name: "fresh green", primary: "#69D025", secondary: "#69D025", group: LAYOUT_GROUPS.HDR, system: true },
             { id: "sys-old-21", name: "reddish pink", primary: "#FF6B8B", secondary: "#FF6B8B", group: LAYOUT_GROUPS.SDB, system: true },
             { id: "sys-old-22", name: "pale yellow", primary: "#FFFFBF", secondary: "#FFFFBF", group: LAYOUT_GROUPS.BG, system: true },
-
-            // Group 3
             { id: "sys-old-23", name: "bright vibrant cyan", primary: "#00FFFF", secondary: "#00FFFF", group: LAYOUT_GROUPS.HDR, system: true },
             { id: "sys-old-24", name: "deep navy blue", primary: "#000080", secondary: "#000080", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-25", name: "lavender purple", primary: "#967BB6", secondary: "#967BB6", group: LAYOUT_GROUPS.SDB, system: true },
@@ -300,8 +255,6 @@
             { id: "sys-old-36", name: "almond roca", primary: "#EADDCD", secondary: "#EADDCD", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-37", name: "transparent yellow", primary: "#F4F098", secondary: "#F4F098", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-38", name: "cocoa dark brown", primary: "#32170B", secondary: "#32170B", group: LAYOUT_GROUPS.BG, system: true },
-
-            // Group 4
             { id: "sys-old-39", name: "steel grey", primary: "#71797E", secondary: "#71797E", group: LAYOUT_GROUPS.FTR, system: true },
             { id: "sys-old-40", name: "powder blue", primary: "#B0E0E6", secondary: "#B0E0E6", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-41", name: "sandswip", primary: "#F5E7A2", secondary: "#F5E7A2", group: LAYOUT_GROUPS.BG, system: true },
@@ -317,8 +270,6 @@
             { id: "sys-old-51", name: "harbor", primary: "#30415D", secondary: "#30415D", group: LAYOUT_GROUPS.HDR, system: true },
             { id: "sys-old-52", name: "glacier", primary: "#78B1BF", secondary: "#78B1BF", group: LAYOUT_GROUPS.HDR, system: true },
             { id: "sys-old-53", name: "pollen", primary: "#EEEEAA", secondary: "#EEEEAA", group: LAYOUT_GROUPS.BG, system: true },
-
-            // Group 5
             { id: "sys-old-54", name: "pickele green", primary: "#194225", secondary: "#194225", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-55", name: "glaucous", primary: "#6082B6", secondary: "#6082B6", group: LAYOUT_GROUPS.HDR, system: true },
             { id: "sys-old-56", name: "pink pearl", primary: "#E7ACCF", secondary: "#E7ACCF", group: LAYOUT_GROUPS.SDB, system: true },
@@ -334,8 +285,6 @@
             { id: "sys-old-66", name: "teracotta", primary: "#E2725B", secondary: "#E2725B", group: LAYOUT_GROUPS.SDB, system: true },
             { id: "sys-old-67", name: "honey", primary: "#FFBD31", secondary: "#FFBD31", group: LAYOUT_GROUPS.SDB, system: true },
             { id: "sys-old-68", name: "sand", primary: "#C2B280", secondary: "#C2B280", group: LAYOUT_GROUPS.SDB, system: true },
-
-            // Group 6
             { id: "sys-old-69", name: "white smoke", primary: "#F5F5F5", secondary: "#F5F5F5", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-70", name: "wine", primary: "#722F37", secondary: "#722F37", group: LAYOUT_GROUPS.FTR, system: true },
             { id: "sys-old-71", name: "double teal", primary: "#006666", secondary: "#006666", group: LAYOUT_GROUPS.HDR, system: true },
@@ -346,8 +295,6 @@
             { id: "sys-old-76", name: "lavender pink", primary: "#FBAED2", secondary: "#FBAED2", group: LAYOUT_GROUPS.SDB, system: true },
             { id: "sys-old-77", name: "platinum", primary: "#E5E4E2", secondary: "#E5E4E2", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-78", name: "photo blue", primary: "#9EB9D4", secondary: "#9EB9D4", group: LAYOUT_GROUPS.HDR, system: true },
-
-            // Group 7
             { id: "sys-old-79", name: "misty blue", primary: "#A0AFCE", secondary: "#A0AFCE", group: LAYOUT_GROUPS.HDR, system: true },
             { id: "sys-old-80", name: "gun metal grey", primary: "#53565B", secondary: "#53565B", group: LAYOUT_GROUPS.FTR, system: true },
             { id: "sys-old-81", name: "creamy avocado", primary: "#C0E181", secondary: "#C0E181", group: LAYOUT_GROUPS.HDR, system: true },
@@ -355,16 +302,12 @@
             { id: "sys-old-83", name: "plum wine", primary: "#5A3147", secondary: "#5A3147", group: LAYOUT_GROUPS.FTR, system: true },
             { id: "sys-old-84", name: "butter cream", primary: "#EFE2B4", secondary: "#EFE2B4", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-85", name: "maroon", primary: "#800000", secondary: "#800000", group: LAYOUT_GROUPS.FTR, system: true },
-
-            // Group 8
             { id: "sys-old-86", name: "Midnight orchid", primary: "#4D1A53", secondary: "#4D1A53", group: LAYOUT_GROUPS.FTR, system: true },
             { id: "sys-old-87", name: "celadon court", primary: "#B8D8BE", secondary: "#B8D8BE", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-88", name: "indigo atoll", primary: "#1D315C", secondary: "#1D315C", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-89", name: "horizon blue", primary: "#8FB8DE", secondary: "#8FB8DE", group: LAYOUT_GROUPS.HDR, system: true },
             { id: "sys-old-90", name: "warm cement", primary: "#B5B2A8", secondary: "#B5B2A8", group: LAYOUT_GROUPS.FTR, system: true },
             { id: "sys-old-91", name: "ash white", primary: "#F2F0ED", secondary: "#F2F0ED", group: LAYOUT_GROUPS.BG, system: true },
-
-            // Group 9
             { id: "sys-old-92", name: "Carbon black", primary: "#1C1C1C", secondary: "#1C1C1C", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-93", name: "bone", primary: "#E3DAC9", secondary: "#E3DAC9", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-94", name: "rosy copper", primary: "#C87661", secondary: "#C87661", group: LAYOUT_GROUPS.SDB, system: true },
@@ -384,8 +327,6 @@
             { id: "sys-old-108", name: "darknude", primary: "#CCAB95", secondary: "#CCAB95", group: LAYOUT_GROUPS.SDB, system: true },
             { id: "sys-old-109", name: "silver pink", primary: "#C4AEAE", secondary: "#C4AEAE", group: LAYOUT_GROUPS.FTR, system: true },
             { id: "sys-old-110", name: "antique bronze", primary: "#665D1E", secondary: "#665D1E", group: LAYOUT_GROUPS.FTR, system: true },
-
-            // Group 10
             { id: "sys-old-111", name: "ochre", primary: "#CC7722", secondary: "#CC7722", group: LAYOUT_GROUPS.SDB, system: true },
             { id: "sys-old-112", name: "FLoral white", primary: "#FFFAF0", secondary: "#FFFAF0", group: LAYOUT_GROUPS.BG, system: true },
             { id: "sys-old-113", name: "Corn silk", primary: "#FFF8DC", secondary: "#FFF8DC", group: LAYOUT_GROUPS.BG, system: true },
@@ -400,7 +341,6 @@
             { id: "sys-old-122", name: "Amethyst", primary: "#9966CC", secondary: "#9966CC", group: LAYOUT_GROUPS.SDB, system: true }
         ];
 
-        // Map system colors to assign sequential index-based baseline createdAt timestamps (0 is oldest)
         const SYSTEM_COLORS = RAW_SYSTEM_COLORS.map((color, index) => ({
             ...color,
             createdAt: index
@@ -511,6 +451,7 @@
             const [sortMode, setSortMode] = useState('LAYOUT'); // LAYOUT vs HARMONIES
             const [sortBy, setSortBy] = useState('NEW_TO_OLD'); // NEW_TO_OLD is the default
             const [colors, setColors] = useState([]);
+            const [user, setUser] = useState(null);
             const [editingColor, setEditingColor] = useState(null);
             const [deletedSysIds, setDeletedSysIds] = useState(() => {
                 const saved = localStorage.getItem(DELETED_SYS_DB_KEY);
@@ -520,7 +461,14 @@
             // Database Settings State
             const [dbConfig, setDbConfig] = useState(() => {
                 const saved = localStorage.getItem(DB_CONFIG_KEY);
-                return saved ? JSON.parse(saved) : { useMock: true, projectId: "", apiKey: "", authDomain: "", appId: "" };
+                return saved ? JSON.parse(saved) : { 
+                    useMock: false, 
+                    projectId: "analyticsdb-ac8c6", 
+                    apiKey: "AIzaSyC5wffZqM4TeDRtOtSv-w3S4-Q-Xny218E", 
+                    authDomain: "analyticsdb-ac8c6.firebaseapp.com", 
+                    messagingSenderId: "352159716527",
+                    appId: "1:352159716527:web:5c7f92350cec32c1d9f05a" 
+                };
             });
 
             // UI dialog states
@@ -599,33 +547,57 @@
                 }
             }, [dbConfig, showToast]);
 
+            // Auth State Listener
+            useEffect(() => {
+                if (typeof firebase !== 'undefined') {
+                    try {
+                        const unsubscribe = firebase.auth().onAuthStateChanged((u) => {
+                            setUser(u);
+                            if (u) {
+                                showToast(`Welcome back, ${u.displayName || "User"}!`, "success");
+                            }
+                        });
+                        return unsubscribe;
+                    } catch (e) {
+                        console.error("Authentication observer error:", e);
+                    }
+                }
+            }, [firestoreDb, showToast]);
+
             // Database loaders
             const loadDatabase = useCallback(async () => {
                 setSyncing(true);
                 
-                // Pull deleted system IDs from Firebase if connected
-                if (firestoreDb) {
+                // Pull deleted system IDs from Firebase if connected & authenticated
+                if (firestoreDb && user) {
                     try {
-                        const doc = await firestoreDb.collection("settings").doc("deleted_sys").get();
+                        const doc = await firestoreDb.collection("users").doc(user.uid).collection("settings").doc("deleted_sys").get();
                         if (doc.exists) {
                             const ids = doc.data().ids || [];
                             setDeletedSysIds(ids);
-                            localStorage.setItem(DELETED_SYS_DB_KEY, JSON.stringify(ids));
+                            localStorage.setItem(DELETED_SYS_DB_KEY + "_" + user.uid, JSON.stringify(ids));
                         }
                     } catch (e) {
                         console.error("Firestore pull deleted sys error:", e);
                     }
+                } else {
+                    const savedDeleted = localStorage.getItem(DELETED_SYS_DB_KEY);
+                    if (savedDeleted) {
+                        setDeletedSysIds(JSON.parse(savedDeleted));
+                    }
                 }
 
-                if (firestoreDb) {
+                if (firestoreDb && user) {
                     try {
-                        const snapshot = await firestoreDb.collection("colors").orderBy("createdAt", "desc").get();
+                        const snapshot = await firestoreDb.collection("colors")
+                            .where("userId", "==", user.uid)
+                            .get();
                         const loaded = [];
                         snapshot.forEach(doc => {
                             loaded.push({ id: doc.id, ...doc.data() });
                         });
                         setColors(loaded);
-                        showToast("Colors synced with Firestore.", "success");
+                        showToast("Colors synced with Cloud.", "success");
                     } catch (e) {
                         console.error("Firestore fetch error:", e);
                         showToast("Firestore query failed. Using local storage.", "error");
@@ -635,7 +607,7 @@
                     loadLocalDb();
                 }
                 setSyncing(false);
-            }, [firestoreDb, showToast]);
+            }, [firestoreDb, user, showToast]);
 
             const loadLocalDb = () => {
                 const raw = localStorage.getItem(OFFLINE_DB_KEY);
@@ -648,15 +620,42 @@
                 } else {
                     setColors([]);
                 }
-                const savedDeleted = localStorage.getItem(DELETED_SYS_DB_KEY);
-                if (savedDeleted) {
-                    setDeletedSysIds(JSON.parse(savedDeleted));
-                }
             };
 
             useEffect(() => {
                 loadDatabase();
             }, [loadDatabase]);
+
+            // Authentication Handlers
+            const handleSignIn = async () => {
+                try {
+                    if (typeof firebase === 'undefined') {
+                        showToast("Firebase SDK not loaded.", "error");
+                        return;
+                    }
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp(dbConfig);
+                    }
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    await firebase.auth().signInWithPopup(provider);
+                } catch (e) {
+                    console.error("Sign in error:", e);
+                    showToast("Google Sign-In failed: " + e.message, "error");
+                }
+            };
+
+            const handleSignOut = async () => {
+                try {
+                    if (typeof firebase !== 'undefined') {
+                        await firebase.auth().signOut();
+                        setUser(null);
+                        showToast("Signed out successfully.", "info");
+                    }
+                } catch (e) {
+                    console.error("Sign out error:", e);
+                    showToast("Sign out failed.", "error");
+                }
+            };
 
             // Format hex inputs to enforce # prefix and limit characters
             const handleHexInputChange = (val, setter, allowEmpty = false) => {
@@ -701,10 +700,11 @@
                     if (editingColor.id.startsWith("sys-")) {
                         const updatedDeleted = [...deletedSysIds, editingColor.id];
                         setDeletedSysIds(updatedDeleted);
-                        localStorage.setItem(DELETED_SYS_DB_KEY, JSON.stringify(updatedDeleted));
-                        if (firestoreDb) {
+                        const storageKey = user ? (DELETED_SYS_DB_KEY + "_" + user.uid) : DELETED_SYS_DB_KEY;
+                        localStorage.setItem(storageKey, JSON.stringify(updatedDeleted));
+                        if (firestoreDb && user) {
                             try {
-                                await firestoreDb.collection("settings").doc("deleted_sys").set({ ids: updatedDeleted });
+                                await firestoreDb.collection("users").doc(user.uid).collection("settings").doc("deleted_sys").set({ ids: updatedDeleted });
                             } catch (e) {
                                 console.error(e);
                             }
@@ -716,10 +716,11 @@
                             primary: newPrimary,
                             secondary: newSecondary || newPrimary,
                             group: finalGroup,
-                            createdAt: Date.now()
+                            createdAt: Date.now(),
+                            userId: user ? user.uid : "sandbox"
                         };
 
-                        if (firestoreDb) {
+                        if (firestoreDb && user) {
                             try {
                                 await firestoreDb.collection("colors").doc(newRef.id).set(newRef);
                                 showToast("Default color modified and saved to Cloud.", "success");
@@ -739,10 +740,11 @@
                             secondary: newSecondary || newPrimary,
                             group: finalGroup,
                             createdAt: editingColor.createdAt || Date.now(), // Preserve timestamp
-                            updatedAt: Date.now()
+                            updatedAt: Date.now(),
+                            userId: user ? user.uid : (editingColor.userId || "sandbox")
                         };
 
-                        if (firestoreDb) {
+                        if (firestoreDb && user) {
                             try {
                                 await firestoreDb.collection("colors").doc(editingColor.id).set(updatedRef);
                                 showToast("Color reference updated in Cloud.", "success");
@@ -762,10 +764,11 @@
                         primary: newPrimary,
                         secondary: newSecondary || newPrimary,
                         group: finalGroup,
-                        createdAt: Date.now()
+                        createdAt: Date.now(),
+                        userId: user ? user.uid : "sandbox"
                     };
 
-                    if (firestoreDb) {
+                    if (firestoreDb && user) {
                         try {
                             await firestoreDb.collection("colors").doc(newRef.id).set(newRef);
                             showToast("Saved to Cloud Firestore.", "success");
@@ -810,11 +813,12 @@
                 if (id.startsWith("sys-")) {
                     const updatedDeleted = [...deletedSysIds, id];
                     setDeletedSysIds(updatedDeleted);
-                    localStorage.setItem(DELETED_SYS_DB_KEY, JSON.stringify(updatedDeleted));
+                    const storageKey = user ? (DELETED_SYS_DB_KEY + "_" + user.uid) : DELETED_SYS_DB_KEY;
+                    localStorage.setItem(storageKey, JSON.stringify(updatedDeleted));
                     
-                    if (firestoreDb) {
+                    if (firestoreDb && user) {
                         try {
-                            await firestoreDb.collection("settings").doc("deleted_sys").set({ ids: updatedDeleted });
+                            await firestoreDb.collection("users").doc(user.uid).collection("settings").doc("deleted_sys").set({ ids: updatedDeleted });
                             showToast("Removed default color reference.", "info");
                         } catch (e) {
                             console.error("Firestore deleted sys save error:", e);
@@ -824,7 +828,7 @@
                         showToast("Removed locally.", "info");
                     }
                 } else {
-                    if (firestoreDb) {
+                    if (firestoreDb && user) {
                         try {
                             await firestoreDb.collection("colors").doc(id).delete();
                             showToast("Deleted from Cloud Firestore.", "info");
@@ -947,7 +951,7 @@
                             </div>
                         </div>
 
-                        {/* Search and Database Tools */}
+                        {/* Search, Auth and Database Tools */}
                         <div className="flex items-center gap-4">
                             <div className="relative hidden md:block">
                                 <input 
@@ -955,12 +959,43 @@
                                     placeholder="Filter layout gradients..." 
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    className="text-xs bg-white dark:bg-[#121620] border border-gray-350 dark:border-white/5 rounded-md py-1.5 pl-3 pr-8 w-48 focus:outline-none focus:border-emerald-500 transition-colors"
+                                    className="text-xs bg-white dark:bg-[#121620] border border-gray-355 rounded-md py-1.5 pl-3 pr-8 w-48 focus:outline-none focus:border-emerald-500 transition-colors"
                                 />
                                 <div className="absolute right-2 top-1.5 text-gray-400"><Icon name="search" size={14} /></div>
                             </div>
                             
                             <div className="h-4 w-px bg-gray-300 dark:bg-gray-700"></div>
+
+                            {/* Google Sign-in trigger */}
+                            {user ? (
+                                <div className="flex items-center gap-2">
+                                    {user.photoURL ? (
+                                        <img src={user.photoURL} alt={user.displayName} className="w-6 h-6 rounded-full border border-emerald-500 shadow-sm" />
+                                    ) : (
+                                        <div className="w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center text-white text-[9px] font-bold">
+                                            {user.displayName ? user.displayName.substring(0, 2).toUpperCase() : "US"}
+                                        </div>
+                                    )}
+                                    <div className="hidden sm:block text-right">
+                                        <p className="text-[10px] font-bold leading-tight">{user.displayName || "User"}</p>
+                                        <button 
+                                            onClick={handleSignOut}
+                                            className="text-[9px] text-rose-500 hover:text-rose-400 font-mono uppercase tracking-wider block"
+                                        >
+                                            Sign Out
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button 
+                                    onClick={handleSignIn}
+                                    className="px-2.5 py-1.5 rounded border border-emerald-600/30 text-emerald-500 hover:bg-emerald-600/10 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                                    title="Sign in with your Google account"
+                                >
+                                    <Icon name="google" size={12} />
+                                    <span className="hidden sm:inline">Sign In</span>
+                                </button>
+                            )}
 
                             {/* Add custom token trigger */}
                             <button 
@@ -1026,7 +1061,7 @@
                         </div>
 
                         {/* SORT/GROUP SELECTOR & CATEGORIES BAR */}
-                        <div className="flex flex-col md:flex-row md:items-center justify-between pb-3 border-b border-gray-250 dark:border-white/5 gap-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between pb-3 border-b border-gray-255 dark:border-white/5 gap-4">
                             
                             {/* Dynamic Sort/Group selection tabs */}
                             <div className="flex flex-wrap gap-2 items-center">
@@ -1262,6 +1297,15 @@
                                                     value={dbConfig.authDomain} 
                                                     onChange={(e) => setDbConfig({...dbConfig, authDomain: e.target.value})} 
                                                     className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-300 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-semibold mb-1">Messaging Sender ID (Project Number)</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={dbConfig.messagingSenderId || ""} 
+                                                    onChange={(e) => setDbConfig({...dbConfig, messagingSenderId: e.target.value})} 
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-350 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none"
                                                 />
                                             </div>
                                             <div>
