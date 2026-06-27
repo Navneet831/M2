@@ -1037,9 +1037,9 @@
                     {/* DYNAMIC FORM MODAL: ADD / EDIT COLOR */}
                     {showAddModal && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                            <div className="bg-white dark:bg-[#0E111A] w-full max-w-sm rounded-xl border border-gray-200 dark:border-white/5 shadow-2xl p-6 text-xs text-gray-700 dark:text-gray-300">
+                            <div className="bg-white dark:bg-[#0E111A] w-full max-w-sm rounded-xl border border-gray-200 dark:border-white/5 shadow-2xl p-6 text-xs text-black dark:text-white">
                                 <div className="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-white/5 pb-2">
-                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                                    <h3 className="text-sm font-bold text-black dark:text-white">
                                         {editingColor ? "Edit Color Reference" : "Create Custom Color"}
                                     </h3>
                                     <button 
@@ -1047,7 +1047,7 @@
                                             setShowAddModal(false);
                                             setEditingColor(null);
                                         }} 
-                                        className="text-lg font-bold hover:text-gray-900 dark:hover:text-white"
+                                        className="text-lg font-bold hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                                     >
                                         &times;
                                     </button>
@@ -1061,7 +1061,7 @@
                                             value={newName} 
                                             onChange={(e) => setNewName(e.target.value)} 
                                             placeholder="e.g. active link blue" 
-                                            className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-350 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                            className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-350 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none text-black dark:text-white"
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-2">
@@ -1078,7 +1078,7 @@
                                                     type="text" 
                                                     value={newPrimary} 
                                                     onChange={(e) => handleHexInputChange(e.target.value, setNewPrimary, false)} 
-                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-300 dark:border-white/5 rounded p-1 font-mono text-[10px]"
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-300 dark:border-white/5 rounded p-1 font-mono text-[10px] text-black dark:text-white"
                                                 />
                                             </div>
                                         </div>
@@ -1096,7 +1096,7 @@
                                                     value={newSecondary} 
                                                     placeholder="Blank for solid color"
                                                     onChange={(e) => handleHexInputChange(e.target.value, setNewSecondary, true)} 
-                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-355 dark:border-white/5 rounded p-1 font-mono text-[10px]"
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-355 dark:border-white/5 rounded p-1 font-mono text-[10px] text-black dark:text-white"
                                                 />
                                             </div>
                                         </div>
@@ -1105,13 +1105,13 @@
                                         <div className="flex justify-between items-center mb-1">
                                             <label className="block font-semibold">Layout Section Group</label>
                                             {!editingColor && (
-                                                <span className="text-[9px] text-emerald-500 font-bold font-mono">Auto-classified</span>
+                                                <span className="text-[9px] text-emerald-600 dark:text-emerald-500 font-bold font-mono">Auto-classified</span>
                                             )}
                                         </div>
                                         <select 
                                             value={newGroup} 
                                             onChange={(e) => setNewGroup(e.target.value)}
-                                            className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-355 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none font-medium"
+                                            className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-355 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none font-medium text-black dark:text-white"
                                         >
                                             {Object.values(LAYOUT_GROUPS).map(gName => (
                                                 <option key={gName} value={gName}>{gName}</option>
@@ -1121,7 +1121,7 @@
 
                                     {/* Preview Block */}
                                     <div 
-                                        className="h-10 w-full rounded-lg border border-black/5 dark:border-white/10 flex items-center justify-center text-[10px] text-gray-400 font-mono" 
+                                        className="h-10 w-full rounded-lg border border-black/5 dark:border-white/10 flex items-center justify-center text-[10px] text-gray-500 dark:text-gray-400 font-mono" 
                                         style={{ background: getPreviewBg() }}
                                     >
                                         {(!newPrimary || newPrimary.length !== 7) && "Enter valid primary hex code..."}
@@ -1134,13 +1134,13 @@
                                                 setShowAddModal(false);
                                                 setEditingColor(null);
                                             }}
-                                            className="px-3 py-1.5 rounded bg-gray-200 dark:bg-gray-800 font-semibold"
+                                            className="px-3 py-1.5 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-semibold text-black dark:text-white transition-colors"
                                         >
                                             Cancel
                                         </button>
                                         <button 
                                             type="submit" 
-                                            className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
+                                            className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors"
                                         >
                                             {editingColor ? "Save Changes" : "Add Reference"}
                                         </button>
