@@ -1037,7 +1037,7 @@
                     {/* DYNAMIC FORM MODAL: ADD / EDIT COLOR */}
                     {showAddModal && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                            <div className="bg-white dark:bg-[#0E111A] w-full max-w-sm rounded-xl border border-gray-200 dark:border-white/5 shadow-2xl p-6 text-xs text-black dark:text-white">
+                            <div className="bg-white dark:bg-[#0E111A] w-full max-w-sm rounded-xl border border-gray-200 dark:border-white/5 shadow-2xl p-6 text-xs text-gray-700 dark:text-gray-300">
                                 <div className="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-white/5 pb-2">
                                     <h3 className="text-sm font-bold text-gray-900 dark:text-white">
                                         {editingColor ? "Edit Color Reference" : "Create Custom Color"}
@@ -1061,7 +1061,7 @@
                                             value={newName} 
                                             onChange={(e) => setNewName(e.target.value)} 
                                             placeholder="e.g. active link blue" 
-                                            className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-350 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none text-black dark:text-white"
+                                            className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-350 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none"
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-2">
@@ -1078,7 +1078,7 @@
                                                     type="text" 
                                                     value={newPrimary} 
                                                     onChange={(e) => handleHexInputChange(e.target.value, setNewPrimary, false)} 
-                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-300 dark:border-white/5 rounded p-1 font-mono text-[10px] text-black dark:text-white"
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-300 dark:border-white/5 rounded p-1 font-mono text-[10px]"
                                                 />
                                             </div>
                                         </div>
@@ -1096,7 +1096,7 @@
                                                     value={newSecondary} 
                                                     placeholder="Blank for solid color"
                                                     onChange={(e) => handleHexInputChange(e.target.value, setNewSecondary, true)} 
-                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-355 dark:border-white/5 rounded p-1 font-mono text-[10px] text-black dark:text-white"
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-355 dark:border-white/5 rounded p-1 font-mono text-[10px]"
                                                 />
                                             </div>
                                         </div>
@@ -1111,7 +1111,7 @@
                                         <select 
                                             value={newGroup} 
                                             onChange={(e) => setNewGroup(e.target.value)}
-                                            className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-355 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none font-medium text-black dark:text-white"
+                                            className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-355 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none font-medium"
                                         >
                                             {Object.values(LAYOUT_GROUPS).map(gName => (
                                                 <option key={gName} value={gName}>{gName}</option>
