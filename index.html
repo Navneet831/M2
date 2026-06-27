@@ -281,7 +281,7 @@
             const [dbConfig, setDbConfig] = useState(() => {
                 const saved = localStorage.getItem(DB_CONFIG_KEY);
                 return saved ? JSON.parse(saved) : { 
-                    useMock: true, 
+                    useMock: false, 
                     projectId: "analyticsdb-ac8c6", 
                     apiKey: "AIzaSyC5wffZqM4TeDRtOtSv-w3S4-Q-Xny218E", 
                     authDomain: "analyticsdb-ac8c6.firebaseapp.com", 
@@ -777,24 +777,10 @@
 
                             <button 
                                 onClick={handleSignIn}
-                                className="w-full py-3 px-4 rounded-xl bg-white hover:bg-gray-100 text-gray-900 font-semibold text-xs flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg mb-3"
+                                className="w-full py-3 px-4 rounded-xl bg-white hover:bg-gray-100 text-gray-900 font-semibold text-xs flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg"
                             >
                                 <Icon name="google" size={18} />
                                 <span>Sign In with Google</span>
-                            </button>
-
-                            <button 
-                                onClick={() => {
-                                    setDbConfig(prev => {
-                                        const updated = { ...prev, useMock: true };
-                                        localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(updated));
-                                        return updated;
-                                    });
-                                    showToast("Switched to offline Sandbox Mode.", "info");
-                                }}
-                                className="w-full py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                <span>Continue in Sandbox Mode (Offline)</span>
                             </button>
                             
                             <div className="pt-2 flex flex-col items-center gap-1">
@@ -848,7 +834,7 @@
                                     placeholder="Filter layout gradients..." 
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    className="text-xs bg-white dark:bg-[#121620] border border-gray-300 rounded-md py-1.5 pl-3 pr-8 w-48 focus:outline-none focus:border-emerald-500 transition-colors"
+                                    className="text-xs bg-white dark:bg-[#121620] border border-gray-355 rounded-md py-1.5 pl-3 pr-8 w-48 focus:outline-none focus:border-emerald-500 transition-colors"
                                 />
                                 <div className="absolute right-2 top-1.5 text-gray-400"><Icon name="search" size={14} /></div>
                             </div>
@@ -957,7 +943,7 @@
                         </div>
 
                         {/* SORT/GROUP SELECTOR & CATEGORIES BAR */}
-                        <div className="flex flex-col md:flex-row md:items-center justify-between pb-3 border-b border-gray-200 dark:border-white/5 gap-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between pb-3 border-b border-gray-255 dark:border-white/5 gap-4">
                             
                             {/* Dynamic Sort/Group selection tabs */}
                             <div className="flex flex-wrap gap-2 items-center">
@@ -1003,7 +989,7 @@
                                 <div className="text-gray-400 dark:text-gray-500 max-w-md mx-auto">
                                     <div className="text-emerald-500 flex justify-center mb-4"><Icon name="database" size={40} /></div>
                                     <p className="text-sm font-bold text-gray-900 dark:text-white mb-1">Your Database is Empty</p>
-                                    <p className="text-xs text-gray-500 leading-relaxed">
+                                    <p className="text-xs text-gray-550 leading-relaxed">
                                         No color configurations were found. Seed the database with the default set of 160 layout colors loaded from colors.json.
                                     </p>
                                 </div>
@@ -1051,9 +1037,9 @@
                     {/* DYNAMIC FORM MODAL: ADD / EDIT COLOR */}
                     {showAddModal && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                            <div className="bg-white dark:bg-[#0E111A] w-full max-w-sm rounded-xl border border-gray-200 dark:border-white/5 shadow-2xl p-6 text-xs text-black dark:text-white">
+                            <div className="bg-white dark:bg-[#0E111A] w-full max-w-sm rounded-xl border border-gray-200 dark:border-white/5 shadow-2xl p-6 text-xs text-gray-700 dark:text-gray-300">
                                 <div className="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-white/5 pb-2">
-                                    <h3 className="text-sm font-bold text-black dark:text-white">
+                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">
                                         {editingColor ? "Edit Color Reference" : "Create Custom Color"}
                                     </h3>
                                     <button 
@@ -1061,7 +1047,7 @@
                                             setShowAddModal(false);
                                             setEditingColor(null);
                                         }} 
-                                        className="text-lg font-bold hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                        className="text-lg font-bold hover:text-gray-900 dark:hover:text-white"
                                     >
                                         &times;
                                     </button>
@@ -1075,7 +1061,7 @@
                                             value={newName} 
                                             onChange={(e) => setNewName(e.target.value)} 
                                             placeholder="e.g. active link blue" 
-                                            className="w-full bg-gray-50 dark:bg-[#121620] border border-gray-300 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none text-black dark:text-white"
+                                            className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-350 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none"
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-2">
@@ -1092,7 +1078,7 @@
                                                     type="text" 
                                                     value={newPrimary} 
                                                     onChange={(e) => handleHexInputChange(e.target.value, setNewPrimary, false)} 
-                                                    className="w-full bg-gray-50 dark:bg-[#121620] border border-gray-300 dark:border-white/5 rounded p-1 font-mono text-[10px] text-black dark:text-white"
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-300 dark:border-white/5 rounded p-1 font-mono text-[10px]"
                                                 />
                                             </div>
                                         </div>
@@ -1110,7 +1096,7 @@
                                                     value={newSecondary} 
                                                     placeholder="Blank for solid color"
                                                     onChange={(e) => handleHexInputChange(e.target.value, setNewSecondary, true)} 
-                                                    className="w-full bg-gray-50 dark:bg-[#121620] border border-gray-300 dark:border-white/5 rounded p-1 font-mono text-[10px] text-black dark:text-white"
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-355 dark:border-white/5 rounded p-1 font-mono text-[10px]"
                                                 />
                                             </div>
                                         </div>
@@ -1119,13 +1105,13 @@
                                         <div className="flex justify-between items-center mb-1">
                                             <label className="block font-semibold">Layout Section Group</label>
                                             {!editingColor && (
-                                                <span className="text-[9px] text-emerald-600 dark:text-emerald-500 font-bold font-mono">Auto-classified</span>
+                                                <span className="text-[9px] text-emerald-500 font-bold font-mono">Auto-classified</span>
                                             )}
                                         </div>
                                         <select 
                                             value={newGroup} 
                                             onChange={(e) => setNewGroup(e.target.value)}
-                                            className="w-full bg-gray-50 dark:bg-[#121620] border border-gray-300 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none font-medium text-black dark:text-white"
+                                            className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-355 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none font-medium"
                                         >
                                             {Object.values(LAYOUT_GROUPS).map(gName => (
                                                 <option key={gName} value={gName}>{gName}</option>
@@ -1135,7 +1121,7 @@
 
                                     {/* Preview Block */}
                                     <div 
-                                        className="h-10 w-full rounded-lg border border-black/5 dark:border-white/10 flex items-center justify-center text-[10px] text-gray-500 dark:text-gray-400 font-mono" 
+                                        className="h-10 w-full rounded-lg border border-black/5 dark:border-white/10 flex items-center justify-center text-[10px] text-gray-400 font-mono" 
                                         style={{ background: getPreviewBg() }}
                                     >
                                         {(!newPrimary || newPrimary.length !== 7) && "Enter valid primary hex code..."}
@@ -1148,13 +1134,13 @@
                                                 setShowAddModal(false);
                                                 setEditingColor(null);
                                             }}
-                                            className="px-3 py-1.5 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-semibold text-black dark:text-white transition-colors"
+                                            className="px-3 py-1.5 rounded bg-gray-200 dark:bg-gray-800 font-semibold"
                                         >
                                             Cancel
                                         </button>
                                         <button 
                                             type="submit" 
-                                            className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors"
+                                            className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
                                         >
                                             {editingColor ? "Save Changes" : "Add Reference"}
                                         </button>
