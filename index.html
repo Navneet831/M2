@@ -334,6 +334,9 @@
             const showToast = useCallback((message, type="info") => {
                 const id = Date.now();
                 setToasts(prev => [...prev, { id, message, type }]);
+                setTimeout(() => {
+                    setToasts(prev => prev.filter(t => t.id !== id));
+                }, 3000);
             }, []);
 
             const removeToast = useCallback((id) => {
@@ -549,6 +552,15 @@
                 }
                 if (newSecondary && newSecondary.length !== 7) {
                     showToast("Please enter a valid 7-character secondary color hex code or clear it.", "error");
+                    return;
+                }
+
+                const isDuplicate = colors.some(c => 
+                    c.primary.toUpperCase() === newPrimary.toUpperCase() && 
+                    (!editingColor || c.id !== editingColor.id)
+                );
+                if (isDuplicate) {
+                    showToast("This color hex already exists. It must be unique.", "error");
                     return;
                 }
 
