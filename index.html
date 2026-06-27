@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Color Matrix Validation Engine</title>
+    <title>Layout & Harmony Color Matrix</title>
     
     <!-- Typography: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -13,41 +13,39 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+
+    <!-- Firebase Compat SDKs (CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    boxShadow: {
-                        'apple': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-                        'float': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
-                    }
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
                 }
             }
         }
     </script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #F0F2F5; color: #111827; overflow-x: hidden; transition: background-color 0.3s, color 0.3s; }
-        .dark body { background-color: #0A0A0A; color: #F3F4F6; }
+        .dark body { background-color: #05070C; color: #F3F4F6; }
         
-        /* Desktop era scrollbar prohibition */
+        /* Custom scrollbar */
         ::-webkit-scrollbar { width: 0px; background: transparent; }
         
         .color-card {
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s, filter 0.2s;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s, border-color 0.2s;
         }
         .color-card:hover {
             transform: translateY(-4px) scale(1.02);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
             z-index: 10;
         }
         .color-card:active { transform: translateY(0px) scale(0.98); }
 
-        /* Intersection Toggle Animation */
         .toggle-icon { transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
         .toggle-icon.rotated { transform: rotate(180deg); }
     </style>
@@ -58,58 +56,119 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useCallback } = React;
 
-        // --- CORE MATH & CONTRAST LOGIC (Hedge Fund Rigor) ---
-        
-        // Convert HEX to RGB
+        // ==========================================
+        // COLOR SYSTEM HELPER FUNCTIONS (HSL & WCAG)
+        // ==========================================
+
         const hexToRgb = (hex) => {
+            if (!hex || hex.length !== 7) return { r: 0, g: 0, b: 0 };
             let c = hex.substring(1);
             if (c.length === 3) c = c.split('').map(x => x + x).join('');
             return {
-                r: parseInt(c.substring(0, 2), 16),
-                g: parseInt(c.substring(2, 4), 16),
-                b: parseInt(c.substring(4, 6), 16)
+                r: parseInt(c.substring(0, 2), 16) || 0,
+                g: parseInt(c.substring(2, 4), 16) || 0,
+                b: parseInt(c.substring(4, 6), 16) || 0
             };
         };
 
-        // Calculate Relative Luminance (WCAG Formula)
+        const rgbToHex = (r, g, b) => {
+            const clamp = (val) => Math.max(0, Math.min(Math.round(val), 255));
+            return "#" + [clamp(r), clamp(g), clamp(b)].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? "0" + hex : hex;
+            }).join("").toUpperCase();
+        };
+
+        const hexToHsl = (hex) => {
+            const { r, g, b } = hexToRgb(hex);
+            const rPercent = r / 255;
+            const gPercent = g / 255;
+            const bPercent = b / 255;
+
+            const max = Math.max(rPercent, gPercent, bPercent);
+            const min = Math.min(rPercent, gPercent, bPercent);
+            let h = 0, s = 0, l = (max + min) / 2;
+
+            if (max !== min) {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case rPercent: h = (gPercent - bPercent) / d + (gPercent < bPercent ? 6 : 0); break;
+                    case gPercent: h = (bPercent - rPercent) / d + 2; break;
+                    case bPercent: h = (rPercent - gPercent) / d + 4; break;
+                }
+                h /= 6;
+            }
+
+            return {
+                h: Math.round(h * 360),
+                s: Math.round(s * 100),
+                l: Math.round(l * 100)
+            };
+        };
+
+        const hslToHex = (h, s, l) => {
+            h = (h % 360 + 360) % 360;
+            s /= 100;
+            l /= 100;
+
+            const c = (1 - Math.abs(2 * l - 1)) * s;
+            const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+            const m = l - c / 2;
+            let r = 0, g = 0, b = 0;
+
+            if (0 <= h && h < 60) {
+                r = c; g = x; b = 0;
+            } else if (60 <= h && h < 120) {
+                r = x; g = c; b = 0;
+            } else if (120 <= h && h < 180) {
+                r = 0; g = c; b = x;
+            } else if (180 <= h && h < 240) {
+                r = 0; g = x; b = c;
+            } else if (240 <= h && h < 300) {
+                r = x; g = 0; b = c;
+            } else if (300 <= h && h < 360) {
+                r = c; g = 0; b = x;
+            }
+
+            return rgbToHex((r + m) * 255, (g + m) * 255, (b + m) * 255);
+        };
+
         const getLuminance = (r, g, b) => {
-            let [rs, gs, bs] = [r/255, g/255, b/255].map(c => 
+            const [rs, gs, bs] = [r/255, g/255, b/255].map(c => 
                 c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
             );
             return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
         };
 
-        // Calculate Contrast Ratio
-        const getContrastRatio = (l1, l2) => {
+        const getContrastRatio = (hex1, hex2) => {
+            const rgb1 = hexToRgb(hex1);
+            const rgb2 = hexToRgb(hex2);
+            const l1 = getLuminance(rgb1.r, rgb1.g, rgb1.b);
+            const l2 = getLuminance(rgb2.r, rgb2.g, rgb2.b);
             const lighter = Math.max(l1, l2);
             const darker = Math.min(l1, l2);
-            return (lighter + 0.05) / (darker + 0.05);
+            return ((lighter + 0.05) / (darker + 0.05)).toFixed(2);
         };
 
-        // Determine optimal text color (Black or White) based on WCAG contrast
         const getOptimalTextColor = (hex) => {
+            if (!hex || hex.length !== 7) return '#FFFFFF';
             const rgb = hexToRgb(hex);
             const lum = getLuminance(rgb.r, rgb.g, rgb.b);
-            const lumWhite = getLuminance(255, 255, 255);
-            const lumBlack = getLuminance(17, 24, 39); // Tailwind gray-900
-
-            const contrastWhite = getContrastRatio(lumWhite, lum);
-            const contrastBlack = getContrastRatio(lum, lumBlack);
-
+            const contrastWhite = (1 + 0.05) / (lum + 0.05);
+            const contrastBlack = (lum + 0.05) / (0.015 + 0.05);
             return contrastWhite > contrastBlack ? '#FFFFFF' : '#111827';
         };
 
-        // Legacy Clipboard execution due to iFrame CORS/Permissions restrictions
-        const copyToClipboard = (text) => {
-            const el = document.createElement('textarea');
-            el.value = text;
-            el.setAttribute('readonly', '');
-            el.style.position = 'absolute';
-            el.style.left = '-9999px';
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
+        const getHarmonyCategory = (hex) => {
+            const { h, s, l } = hexToHsl(hex);
+            if (s < 10) return "Monochrome & Neutral tones";
+            if (h >= 330 || h < 20) return "Complementary Red Harmonies";
+            if (h >= 20 && h < 50) return "Analogous Orange & Gold tones";
+            if (h >= 50 && h < 80) return "Analogous Yellow & Amber tones";
+            if (h >= 80 && h < 165) return "Triadic Green & Mint harmonies";
+            if (h >= 165 && h < 255) return "Complementary Blue & Cyan tones";
+            return "Triadic Purple & Violet sets";
         };
 
         // --- ICONS ---
@@ -118,136 +177,324 @@
                 'moon': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>,
                 'sun': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>,
                 'copy': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>,
-                'check': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                'check': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>,
+                'database': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"></path></svg>,
+                'plus': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
+                'search': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>,
+                'refresh': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>,
+                'trash': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>,
+                'edit': <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             };
             return icons[name] || null;
         };
 
-        // --- DATASET (Approximated from user prompt) ---
-        const colorData = [
-            { group: "Group 1", colors: [
-                { name: "calming purple", hex: "#9B84B8" }, { name: "quiet Abyss", hex: "#0B101E" },
-                { name: "perfect peach", hex: "#FFDCB8" }, { name: "Meski black", hex: "#0F1110" },
-                { name: "electicity blue", hex: "#0FF0FC" }, { name: "Dark Sapphire", hex: "#0F1E38" },
-                { name: "macadamia beige", hex: "#F0E0C8" }, { name: "fence green", hex: "#3B5E45" },
-                { name: "fine turquoise", hex: "#48CED9" }, { name: "stellar explorer", hex: "#1B2838" },
-                { name: "exotic summer", hex: "#FF7A59" }, { name: "extreme burgundy", hex: "#4A0404" },
-                { name: "shimmer pearl", hex: "#FDFBF7" }, { name: "rich maroon", hex: "#6A0C0B" }
-            ]},
-            { group: "Group 2", colors: [
-                { name: "Soft yellow green", hex: "#D5E59B" }, { name: "deep muted green", hex: "#2B4231" },
-                { name: "neon green", hex: "#39FF14" }, { name: "chrysocolla blue", hex: "#2A8F9D" },
-                { name: "mutated blue green", hex: "#4A787A" }, { name: "fresh green", hex: "#69D025" },
-                { name: "reddish pink", hex: "#FF6B8B" }, { name: "pale yellow", hex: "#FFFFBF" }
-            ]},
-            { group: "Group 3", colors: [
-                { name: "bright vibrant cyan", hex: "#00FFFF" }, { name: "deep navy blue", hex: "#000080" },
-                { name: "lavender purple", hex: "#967BB6" }, { name: "warm pastel yellow", hex: "#FDFD96" },
-                { name: "dark slate grey", hex: "#2F4F4F" }, { name: "antique ruby", hex: "#841B2D" },
-                { name: "bistre", hex: "#3D2B1F" }, { name: "brown sugar", hex: "#AF6E4D" },
-                { name: "thistle", hex: "#D8BFD8" }, { name: "liberty", hex: "#545AA7" },
-                { name: "tan", hex: "#D2B48C" }, { name: "liver", hex: "#534B4F" },
-                { name: "talismanic teal", hex: "#006D5B" }, { name: "almond roca", hex: "#EADDCD" },
-                { name: "transparent yellow", hex: "#F4F098" }, { name: "cocoa dark brown", hex: "#32170B" }
-            ]},
-            { group: "Group 4", colors: [
-                { name: "steel grey", hex: "#71797E" }, { name: "powder blue", hex: "#B0E0E6" },
-                { name: "sandswip", hex: "#F5E7A2" }, { name: "coconut cream", hex: "#F8F4E6" },
-                { name: "orchid", hex: "#DA70D6" }, { name: "camellia", hex: "#F67381" },
-                { name: "magnolia", hex: "#F8F4FF" }, { name: "umber", hex: "#635147" },
-                { name: "marble", hex: "#F2F0E6" }, { name: "apricot", hex: "#FBCEB1" },
-                { name: "mango", hex: "#FFC324" }, { name: "pomegranate", hex: "#C0392B" },
-                { name: "harbor", hex: "#30415D" }, { name: "glacier", hex: "#78B1BF" },
-                { name: "pollen", hex: "#EEEEAA" }
-            ]},
-            { group: "Group 5", colors: [
-                { name: "pickele green", hex: "#194225" }, { name: "glaucous", hex: "#6082B6" },
-                { name: "pink pearl", hex: "#E7ACCF" }, { name: "sapphire", hex: "#0F52BA" },
-                { name: "turmeric", hex: "#FFC000" }, { name: "green pea", hex: "#1D5921" },
-                { name: "rasberry", hex: "#E30B5D" }, { name: "lemonade", hex: "#F8C1CC" },
-                { name: "oak", hex: "#4F301F" }, { name: "olive", hex: "#808000" },
-                { name: "sage", hex: "#BCBB8E" }, { name: "ivory", hex: "#FFFFF0" },
-                { name: "teracotta", hex: "#E2725B" }, { name: "honey", hex: "#FFBD31" },
-                { name: "sand", hex: "#C2B280" }
-            ]},
-            { group: "Group 6", colors: [
-                { name: "white smoke", hex: "#F5F5F5" }, { name: "wine", hex: "#722F37" },
-                { name: "double teal", hex: "#006666" }, { name: "lemon yellow", hex: "#FFF44F" },
-                { name: "robbin egg blue", hex: "#00CCCC" }, { name: "black olive", hex: "#3B3C36" },
-                { name: "persian pink", hex: "#F77FBE" }, { name: "lavender pink", hex: "#FBAED2" },
-                { name: "platinum", hex: "#E5E4E2" }, { name: "photo blue", hex: "#9EB9D4" }
-            ]},
-            { group: "Group 7", colors: [
-                { name: "misty blue", hex: "#A0AFCE" }, { name: "gun metal grey", hex: "#53565B" },
-                { name: "creamy avocado", hex: "#C0E181" }, { name: "french blue", hex: "#0072BB" },
-                { name: "plum wine", hex: "#5A3147" }, { name: "butter cream", hex: "#EFE2B4" },
-                { name: "maroon", hex: "#800000" }
-            ]},
-            { group: "Group 8", colors: [
-                { name: "Midnight orchid", hex: "#4D1A53" }, { name: "celadon court", hex: "#B8D8BE" },
-                { name: "indigo atoll", hex: "#1D315C" }, { name: "horizon blue", hex: "#8FB8DE" },
-                { name: "warm cement", hex: "#B5B2A8" }, { name: "ash white", hex: "#F2F0ED" }
-            ]},
-            { group: "Group 9", colors: [
-                { name: "Carbon black", hex: "#1C1C1C" }, { name: "bone", hex: "#E3DAC9" },
-                { name: "rosy copper", hex: "#C87661" }, { name: "pumpkin spice", hex: "#C96222" },
-                { name: "Beige", hex: "#F5F5DC" }, { name: "deep mocha", hex: "#4A3028" },
-                { name: "vibrant coral", hex: "#FF5E4D" }, { name: "albaster grey", hex: "#ECEAE4" },
-                { name: "soft linen", hex: "#F2ECE1" }, { name: "dark goldernrod", hex: "#B8860B" },
-                { name: "emeral spring", hex: "#2ECC71" }, { name: "electric lime", hex: "#CCFF00" },
-                { name: "jet black", hex: "#0A0A0A" }, { name: "aero blue", hex: "#C0E8D5" },
-                { name: "pelorous", hex: "#3EABBC" }, { name: "graphite", hex: "#383838" },
-                { name: "darknude", hex: "#CCAB95" }, { name: "silver pink", hex: "#C4AEAE" },
-                { name: "antique bronze", hex: "#665D1E" }
-            ]},
-            { group: "Group 10", colors: [
-                { name: "ochre", hex: "#CC7722" }, { name: "FLoral white", hex: "#FFFAF0" },
-                { name: "Corn silk", hex: "#FFF8DC" }, { name: "rose Ebony", hex: "#674846" },
-                { name: "Midnight green", hex: "#004953" }, { name: "tea green", hex: "#D0F0C0" },
-                { name: "Lavender Bluch", hex: "#FFF0F5" }, { name: "claret", hex: "#7F1734" },
-                { name: "night SKY", hex: "#1A1A2E" }, { name: "Blue SKy", hex: "#87CEEB" },
-                { name: "ghost white", hex: "#F8F8FF" }, { name: "Amethyst", hex: "#9966CC" }
-            ]}
+        // ==========================================
+        // SYSTEM LAYOUT REFERENCE DEFINITIONS
+        // ==========================================
+        const LAYOUT_GROUPS = {
+            BG: "Background Colors",
+            HDR: "Header Colors",
+            SDB: "Sidebar Colors",
+            FTR: "Footer Colors"
+        };
+
+        const classifyLayoutGroup = (hex) => {
+            if (!hex || hex.length !== 7) return LAYOUT_GROUPS.BG;
+            const { h, s, l } = hexToHsl(hex);
+            if (l <= 15 || l >= 85) return LAYOUT_GROUPS.BG;
+            if (s < 18) return LAYOUT_GROUPS.FTR;
+            if (h >= 80 && h <= 260) return LAYOUT_GROUPS.HDR;
+            return LAYOUT_GROUPS.SDB;
+        };
+
+        const RAW_SYSTEM_COLORS = [
+            // Backgrounds
+            { id: "sys-bg-1", name: "obsidian abyss", primary: "#030712", secondary: "#0B0F19", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-bg-2", name: "slate canvas", primary: "#F8FAFC", secondary: "#E2E8F0", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-bg-3", name: "grid dark surface", primary: "#0F172A", secondary: "#1E293B", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-bg-4", name: "mist light surface", primary: "#FFFFFF", secondary: "#F1F5F9", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-bg-5", name: "deep space canvas", primary: "#05070E", secondary: "#0F131E", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-bg-6", name: "midnight marine", primary: "#0B132B", secondary: "#1C2541", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-bg-7", name: "soft lavender canvas", primary: "#F3F4F6", secondary: "#EBE8FC", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-bg-8", name: "titanium surface", primary: "#1F2937", secondary: "#111827", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-bg-9", name: "warm chalk", primary: "#FAF9F6", secondary: "#F2EFE9", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-bg-10", name: "obsidian velvet", primary: "#020205", secondary: "#0D0B18", group: LAYOUT_GROUPS.BG, system: true },
+
+            // Headers
+            { id: "sys-hdr-1", name: "emerald topbar", primary: "#065F46", secondary: "#059669", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-hdr-2", name: "indigo navbar", primary: "#312E81", secondary: "#4F46E5", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-hdr-3", name: "carbon dark header", primary: "#111827", secondary: "#1F2937", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-hdr-4", name: "ocean treasury nav", primary: "#0F766E", secondary: "#0D9488", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-hdr-5", name: "snow light topbar", primary: "#FFFFFF", secondary: "#E2E8F0", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-hdr-6", name: "teal velvet navbar", primary: "#115E59", secondary: "#0D9488", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-hdr-7", name: "rose gold header", primary: "#4C0519", secondary: "#881337", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-hdr-8", name: "crimson status banner", primary: "#7F1D1D", secondary: "#B91C1C", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-hdr-9", name: "sunset topnav", primary: "#7C2D12", secondary: "#C2410C", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-hdr-10", name: "steel corporate header", primary: "#374151", secondary: "#4B5563", group: LAYOUT_GROUPS.HDR, system: true },
+
+            // Sidebars
+            { id: "sys-sdb-1", name: "sidebar slate base", primary: "#0F172A", secondary: "#1E293B", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-sdb-2", name: "active link emerald", primary: "#10B981", secondary: "#059669", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-sdb-3", name: "active link indigo", primary: "#6366F1", secondary: "#4F46E5", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-sdb-4", name: "hover highlight gray", primary: "#1E293B", secondary: "#334155" , group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-sdb-5", name: "sidebar cobalt item", primary: "#3B82F6", secondary: "#1D4ED8", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-sdb-6", name: "active link ruby", primary: "#E11D48", secondary: "#BE123C", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-sdb-7", name: "active link cyan", primary: "#0891B2", secondary: "#0E7490", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-sdb-8", name: "carbon sidebar base", primary: "#18181B", secondary: "#09090B", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-sdb-9", name: "warm sand sidebar", primary: "#E2D9C8", secondary: "#D4C5B9", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-sdb-10", name: "royal sidebar link", primary: "#6D28D9", secondary: "#5B21B6", group: LAYOUT_GROUPS.SDB, system: true },
+
+            // Footers
+            { id: "sys-ftr-1", name: "muted copyright footer", primary: "#0B0F19", secondary: "#111827", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-ftr-2", name: "warm info bar", primary: "#F1F5F9", secondary: "#E2E8F0", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-ftr-3", name: "obsidian trim line", primary: "#1E2937", secondary: "#111827", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-ftr-4", name: "charcoal stats bottom", primary: "#18181B", secondary: "#27272A", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-ftr-5", name: "forest bottomline status", primary: "#064E3B", secondary: "#065F46", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-ftr-6", name: "asphalt footer stats", primary: "#1F2937", secondary: "#111827", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-ftr-7", name: "premium gold border", primary: "#78350F", secondary: "#451A03", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-ftr-8", name: "cloudy neutral footer", primary: "#E2E8F0", secondary: "#CBD5E1", group: LAYOUT_GROUPS.FTR, system: true },
+
+            // ========================================================
+            // MERGED COLORS FROM OLD.HTML (122 FLAT REFERENCE COLORS)
+            // ========================================================
+            // Group 1
+            { id: "sys-old-1", name: "calming purple", primary: "#9B84B8", secondary: "#9B84B8", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-2", name: "quiet Abyss", primary: "#0B101E", secondary: "#0B101E", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-3", name: "perfect peach", primary: "#FFDCB8", secondary: "#FFDCB8", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-4", name: "Meski black", primary: "#0F1110", secondary: "#0F1110", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-5", name: "electicity blue", primary: "#0FF0FC", secondary: "#0FF0FC", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-6", name: "Dark Sapphire", primary: "#0F1E38", secondary: "#0F1E38", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-7", name: "macadamia beige", primary: "#F0E0C8", secondary: "#F0E0C8", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-8", name: "fence green", primary: "#3B5E45", secondary: "#3B5E45", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-9", name: "fine turquoise", primary: "#48CED9", secondary: "#48CED9", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-10", name: "stellar explorer", primary: "#1B2838", secondary: "#1B2838", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-11", name: "exotic summer", primary: "#FF7A59", secondary: "#FF7A59", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-12", name: "extreme burgundy", primary: "#4A0404", secondary: "#4A0404", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-13", name: "shimmer pearl", primary: "#FDFBF7", secondary: "#FDFBF7", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-14", name: "rich maroon", primary: "#6A0C0B", secondary: "#6A0C0B", group: LAYOUT_GROUPS.BG, system: true },
+
+            // Group 2
+            { id: "sys-old-15", name: "Soft yellow green", primary: "#D5E59B", secondary: "#D5E59B", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-16", name: "deep muted green", primary: "#2B4231", secondary: "#2B4231", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-17", name: "neon green", primary: "#39FF14", secondary: "#39FF14", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-18", name: "chrysocolla blue", primary: "#2A8F9D", secondary: "#2A8F9D", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-19", name: "mutated blue green", primary: "#4A787A", secondary: "#4A787A", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-20", name: "fresh green", primary: "#69D025", secondary: "#69D025", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-21", name: "reddish pink", primary: "#FF6B8B", secondary: "#FF6B8B", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-22", name: "pale yellow", primary: "#FFFFBF", secondary: "#FFFFBF", group: LAYOUT_GROUPS.BG, system: true },
+
+            // Group 3
+            { id: "sys-old-23", name: "bright vibrant cyan", primary: "#00FFFF", secondary: "#00FFFF", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-24", name: "deep navy blue", primary: "#000080", secondary: "#000080", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-25", name: "lavender purple", primary: "#967BB6", secondary: "#967BB6", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-26", name: "warm pastel yellow", primary: "#FDFD96", secondary: "#FDFD96", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-27", name: "dark slate grey", primary: "#2F4F4F", secondary: "#2F4F4F", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-28", name: "antique ruby", primary: "#841B2D", secondary: "#841B2D", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-29", name: "bistre", primary: "#3D2B1F", secondary: "#3D2B1F", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-30", name: "brown sugar", primary: "#AF6E4D", secondary: "#AF6E4D", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-31", name: "thistle", primary: "#D8BFD8", secondary: "#D8BFD8", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-32", name: "liberty", primary: "#545AA7", secondary: "#545AA7", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-33", name: "tan", primary: "#D2B48C", secondary: "#D2B48C", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-34", name: "liver", primary: "#534B4F", secondary: "#534B4F", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-35", name: "talismanic teal", primary: "#006D5B", secondary: "#006D5B", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-36", name: "almond roca", primary: "#EADDCD", secondary: "#EADDCD", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-37", name: "transparent yellow", primary: "#F4F098", secondary: "#F4F098", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-38", name: "cocoa dark brown", primary: "#32170B", secondary: "#32170B", group: LAYOUT_GROUPS.BG, system: true },
+
+            // Group 4
+            { id: "sys-old-39", name: "steel grey", primary: "#71797E", secondary: "#71797E", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-40", name: "powder blue", primary: "#B0E0E6", secondary: "#B0E0E6", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-41", name: "sandswip", primary: "#F5E7A2", secondary: "#F5E7A2", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-42", name: "coconut cream", primary: "#F8F4E6", secondary: "#F8F4E6", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-43", name: "orchid", primary: "#DA70D6", secondary: "#DA70D6", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-44", name: "camellia", primary: "#F67381", secondary: "#F67381", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-45", name: "magnolia", primary: "#F8F4FF", secondary: "#F8F4FF", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-46", name: "umber", primary: "#635147", secondary: "#635147", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-47", name: "marble", primary: "#F2F0E6", secondary: "#F2F0E6", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-48", name: "apricot", primary: "#FBCEB1", secondary: "#FBCEB1", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-49", name: "mango", primary: "#FFC324", secondary: "#FFC324", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-50", name: "pomegranate", primary: "#C0392B", secondary: "#C0392B", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-51", name: "harbor", primary: "#30415D", secondary: "#30415D", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-52", name: "glacier", primary: "#78B1BF", secondary: "#78B1BF", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-53", name: "pollen", primary: "#EEEEAA", secondary: "#EEEEAA", group: LAYOUT_GROUPS.BG, system: true },
+
+            // Group 5
+            { id: "sys-old-54", name: "pickele green", primary: "#194225", secondary: "#194225", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-55", name: "glaucous", primary: "#6082B6", secondary: "#6082B6", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-56", name: "pink pearl", primary: "#E7ACCF", secondary: "#E7ACCF", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-57", name: "sapphire", primary: "#0F52BA", secondary: "#0F52BA", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-58", name: "turmeric", primary: "#FFC000", secondary: "#FFC000", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-59", name: "green pea", primary: "#1D5921", secondary: "#1D5921", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-60", name: "rasberry", primary: "#E30B5D", secondary: "#E30B5D", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-61", name: "lemonade", primary: "#F8C1CC", secondary: "#F8C1CC", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-62", name: "oak", primary: "#4F301F", secondary: "#4F301F", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-63", name: "olive", primary: "#808000", secondary: "#808000", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-64", name: "sage", primary: "#BCBB8E", secondary: "#BCBB8E", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-65", name: "ivory", primary: "#FFFFF0", secondary: "#FFFFF0", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-66", name: "teracotta", primary: "#E2725B", secondary: "#E2725B", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-67", name: "honey", primary: "#FFBD31", secondary: "#FFBD31", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-68", name: "sand", primary: "#C2B280", secondary: "#C2B280", group: LAYOUT_GROUPS.SDB, system: true },
+
+            // Group 6
+            { id: "sys-old-69", name: "white smoke", primary: "#F5F5F5", secondary: "#F5F5F5", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-70", name: "wine", primary: "#722F37", secondary: "#722F37", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-71", name: "double teal", primary: "#006666", secondary: "#006666", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-72", name: "lemon yellow", primary: "#FFF44F", secondary: "#FFF44F", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-73", name: "robbin egg blue", primary: "#00CCCC", secondary: "#00CCCC", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-74", name: "black olive", primary: "#3B3C36", secondary: "#3B3C36", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-75", name: "persian pink", primary: "#F77FBE", secondary: "#F77FBE", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-76", name: "lavender pink", primary: "#FBAED2", secondary: "#FBAED2", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-77", name: "platinum", primary: "#E5E4E2", secondary: "#E5E4E2", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-78", name: "photo blue", primary: "#9EB9D4", secondary: "#9EB9D4", group: LAYOUT_GROUPS.HDR, system: true },
+
+            // Group 7
+            { id: "sys-old-79", name: "misty blue", primary: "#A0AFCE", secondary: "#A0AFCE", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-80", name: "gun metal grey", primary: "#53565B", secondary: "#53565B", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-81", name: "creamy avocado", primary: "#C0E181", secondary: "#C0E181", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-82", name: "french blue", primary: "#0072BB", secondary: "#0072BB", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-83", name: "plum wine", primary: "#5A3147", secondary: "#5A3147", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-84", name: "butter cream", primary: "#EFE2B4", secondary: "#EFE2B4", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-85", name: "maroon", primary: "#800000", secondary: "#800000", group: LAYOUT_GROUPS.FTR, system: true },
+
+            // Group 8
+            { id: "sys-old-86", name: "Midnight orchid", primary: "#4D1A53", secondary: "#4D1A53", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-87", name: "celadon court", primary: "#B8D8BE", secondary: "#B8D8BE", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-88", name: "indigo atoll", primary: "#1D315C", secondary: "#1D315C", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-89", name: "horizon blue", primary: "#8FB8DE", secondary: "#8FB8DE", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-90", name: "warm cement", primary: "#B5B2A8", secondary: "#B5B2A8", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-91", name: "ash white", primary: "#F2F0ED", secondary: "#F2F0ED", group: LAYOUT_GROUPS.BG, system: true },
+
+            // Group 9
+            { id: "sys-old-92", name: "Carbon black", primary: "#1C1C1C", secondary: "#1C1C1C", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-93", name: "bone", primary: "#E3DAC9", secondary: "#E3DAC9", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-94", name: "rosy copper", primary: "#C87661", secondary: "#C87661", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-95", name: "pumpkin spice", primary: "#C96222", secondary: "#C96222", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-96", name: "Beige", primary: "#F5F5DC", secondary: "#F5F5DC", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-97", name: "deep mocha", primary: "#4A3028", secondary: "#4A3028", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-98", name: "vibrant coral", primary: "#FF5E4D", secondary: "#FF5E4D", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-99", name: "albaster grey", primary: "#ECEAE4", secondary: "#ECEAE4", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-100", name: "soft linen", primary: "#F2ECE1", secondary: "#F2ECE1", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-101", name: "dark goldernrod", primary: "#B8860B", secondary: "#B8860B", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-102", name: "emeral spring", primary: "#2ECC71", secondary: "#2ECC71", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-103", name: "electric lime", primary: "#CCFF00", secondary: "#CCFF00", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-104", name: "jet black", primary: "#0A0A0A", secondary: "#0A0A0A", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-105", name: "aero blue", primary: "#C0E8D5", secondary: "#C0E8D5", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-106", name: "pelorous", primary: "#3EABBC", secondary: "#3EABBC", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-107", name: "graphite", primary: "#383838", secondary: "#383838", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-108", name: "darknude", primary: "#CCAB95", secondary: "#CCAB95", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-109", name: "silver pink", primary: "#C4AEAE", secondary: "#C4AEAE", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-110", name: "antique bronze", primary: "#665D1E", secondary: "#665D1E", group: LAYOUT_GROUPS.FTR, system: true },
+
+            // Group 10
+            { id: "sys-old-111", name: "ochre", primary: "#CC7722", secondary: "#CC7722", group: LAYOUT_GROUPS.SDB, system: true },
+            { id: "sys-old-112", name: "FLoral white", primary: "#FFFAF0", secondary: "#FFFAF0", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-113", name: "Corn silk", primary: "#FFF8DC", secondary: "#FFF8DC", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-114", name: "rose Ebony", primary: "#674846", secondary: "#674846", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-115", name: "Midnight green", primary: "#004953", secondary: "#004953", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-116", name: "tea green", primary: "#D0F0C0", secondary: "#D0F0C0", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-117", name: "Lavender Bluch", primary: "#FFF0F5", secondary: "#FFF0F5", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-118", name: "claret", primary: "#7F1734", secondary: "#7F1734", group: LAYOUT_GROUPS.FTR, system: true },
+            { id: "sys-old-119", name: "night SKY", primary: "#1A1A2E", secondary: "#1A1A2E", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-120", name: "Blue SKy", primary: "#87CEEB", secondary: "#87CEEB", group: LAYOUT_GROUPS.HDR, system: true },
+            { id: "sys-old-121", name: "ghost white", primary: "#F8F8FF", secondary: "#F8F8FF", group: LAYOUT_GROUPS.BG, system: true },
+            { id: "sys-old-122", name: "Amethyst", primary: "#9966CC", secondary: "#9966CC", group: LAYOUT_GROUPS.SDB, system: true }
         ];
 
-        // --- COMPONENTS ---
+        // Map system colors to assign sequential index-based baseline createdAt timestamps (0 is oldest)
+        const SYSTEM_COLORS = RAW_SYSTEM_COLORS.map((color, index) => ({
+            ...color,
+            createdAt: index
+        }));
 
-        const ColorCard = ({ color }) => {
+        const DB_CONFIG_KEY = "aura_firebase_exhaustive_config";
+        const OFFLINE_DB_KEY = "aura_local_exhaustive_ref";
+        const DELETED_SYS_DB_KEY = "aura_deleted_sys_colors";
+
+        // ==========================================
+        // MINIMAL COLOR CARD REFERENCE COMPONENT
+        // ==========================================
+        const ColorCard = ({ color, onDelete, onEdit }) => {
             const [copied, setCopied] = useState(false);
-            const textColor = getOptimalTextColor(color.hex);
-            
-            const handleCopy = () => {
-                copyToClipboard(color.hex);
+            const textColor = getOptimalTextColor(color.primary);
+
+            const handleCopy = (e) => {
+                e.stopPropagation();
+                let copyVal = "";
+                if (!color.secondary || color.secondary === color.primary) {
+                    copyVal = color.primary;
+                } else {
+                    copyVal = `linear-gradient(135deg, ${color.primary}, ${color.secondary})`;
+                }
+                
+                const el = document.createElement('textarea');
+                el.value = copyVal;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1500);
+            };
+
+            const getCardBackground = () => {
+                if (!color.secondary || color.secondary === color.primary) {
+                    return color.primary;
+                }
+                return `linear-gradient(135deg, ${color.primary}, ${color.secondary})`;
             };
 
             return (
                 <div 
                     onClick={handleCopy}
                     className="color-card group relative h-28 w-full rounded-xl cursor-pointer flex flex-col justify-between p-3 border border-black/5 dark:border-white/10"
-                    style={{ backgroundColor: color.hex, color: textColor }}
+                    style={{ background: getCardBackground(), color: textColor }}
                     role="button"
                     tabIndex={0}
-                    aria-label={`Copy ${color.name} hex code`}
-                    onKeyDown={(e) => e.key === 'Enter' && handleCopy()}
+                    aria-label={`Copy color definition for ${color.name}`}
                 >
                     <div className="flex justify-between items-start w-full">
-                        <span className="text-[11px] font-bold tracking-tight uppercase opacity-90 drop-shadow-sm leading-tight max-w-[80%]">
+                        <span className="text-[11px] font-bold tracking-tight uppercase opacity-95 drop-shadow-sm leading-tight max-w-[80%]">
                             {color.name}
                         </span>
-                        <div className={`opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 dark:bg-white/20 p-1 rounded backdrop-blur-sm`}>
-                            {copied ? <Icon name="check" size={14} /> : <Icon name="copy" size={14} />}
+                        
+                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                            {onEdit && (
+                                <button 
+                                    onClick={() => onEdit(color)}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 dark:bg-white/20 hover:bg-emerald-600/40 p-1 rounded backdrop-blur-sm"
+                                    title="Edit reference"
+                                >
+                                    <Icon name="edit" size={12} />
+                                </button>
+                            )}
+                            {onDelete && (
+                                <button 
+                                    onClick={() => onDelete(color.id)}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 dark:bg-white/20 hover:bg-red-600/40 p-1 rounded backdrop-blur-sm"
+                                    title="Delete token"
+                                >
+                                    <Icon name="trash" size={12} />
+                                </button>
+                            )}
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 dark:bg-white/20 p-1 rounded backdrop-blur-sm">
+                                {copied ? <Icon name="check" size={12} /> : <Icon name="copy" size={12} />}
+                            </div>
                         </div>
                     </div>
                     
-                    <div className="flex justify-between items-end w-full">
-                        <span className="text-sm font-mono tracking-wider font-semibold opacity-90">{color.hex}</span>
+                    <div className="flex justify-between items-end w-full text-[10px] font-mono opacity-90 font-semibold tracking-wider">
+                        <span>{color.primary}</span>
+                        {color.secondary && color.secondary !== color.primary && (
+                            <>
+                                <span>➔</span>
+                                <span>{color.secondary}</span>
+                            </>
+                        )}
                     </div>
                     
-                    {/* Copy indicator overlay */}
                     {copied && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 dark:bg-white/20 backdrop-blur-sm rounded-xl z-20">
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/25 dark:bg-white/20 backdrop-blur-[2px] rounded-xl z-20">
                             <span className="font-bold text-xs tracking-widest uppercase">Copied</span>
                         </div>
                     )}
@@ -255,134 +502,817 @@
             );
         };
 
+        // ==========================================
+        // MAIN APPLICATION COMPONENT
+        // ==========================================
         const App = () => {
-            const [isDark, setIsDark] = useState(false);
+            const [isDark, setIsDark] = useState(true);
             const [search, setSearch] = useState('');
+            const [sortMode, setSortMode] = useState('LAYOUT'); // LAYOUT vs HARMONIES
+            const [sortBy, setSortBy] = useState('NEW_TO_OLD'); // NEW_TO_OLD is the default
+            const [colors, setColors] = useState([]);
+            const [editingColor, setEditingColor] = useState(null);
+            const [deletedSysIds, setDeletedSysIds] = useState(() => {
+                const saved = localStorage.getItem(DELETED_SYS_DB_KEY);
+                return saved ? JSON.parse(saved) : [];
+            });
 
-            // Initialize Lenis Smooth Scrolling
+            // Database Settings State
+            const [dbConfig, setDbConfig] = useState(() => {
+                const saved = localStorage.getItem(DB_CONFIG_KEY);
+                return saved ? JSON.parse(saved) : { useMock: true, projectId: "", apiKey: "", authDomain: "", appId: "" };
+            });
+
+            // UI dialog states
+            const [showDbModal, setShowDbModal] = useState(false);
+            const [showAddModal, setShowAddModal] = useState(false);
+            const [syncing, setSyncing] = useState(false);
+
+            // Add/Edit Form values
+            const [newName, setNewName] = useState('');
+            const [newPrimary, setNewPrimary] = useState('#'); // Initialize empty with only #
+            const [newSecondary, setNewSecondary] = useState(''); // Empty string means solid color
+            const [newGroup, setNewGroup] = useState(LAYOUT_GROUPS.BG);
+            const [toasts, setToasts] = useState([]);
+
+            // Keyboard shortcut Ctrl+N for adding colors and Escape key to close modals
             useEffect(() => {
-                if (window.Lenis) {
-                    const lenis = new window.Lenis();
-                    function raf(time) {
-                        lenis.raf(time);
-                        requestAnimationFrame(raf);
+                const handleKeyDown = (e) => {
+                    if (e.ctrlKey && e.key.toLowerCase() === 'n') {
+                        e.preventDefault(); // Prevents default new window action
+                        setEditingColor(null);
+                        setNewName('');
+                        setNewPrimary('#');
+                        setNewSecondary('');
+                        setShowAddModal(true);
                     }
-                    requestAnimationFrame(raf);
-                    return () => lenis.destroy();
-                }
+                    if (e.key === 'Escape') {
+                        setShowAddModal(false);
+                        setShowDbModal(false);
+                        setEditingColor(null);
+                    }
+                };
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
             }, []);
 
-            // Handle Intersection Pattern Toggle (Dark/Light)
+            // Auto-classify helper to pre-fill dropdown in UI
+            useEffect(() => {
+                if (newPrimary && newPrimary.length === 7 && !editingColor) {
+                    const groupSuggestion = classifyLayoutGroup(newPrimary);
+                    setNewGroup(groupSuggestion);
+                }
+            }, [newPrimary, editingColor]);
+
+            const showToast = useCallback((message, type="info") => {
+                const id = Date.now();
+                setToasts(prev => [...prev, { id, message, type }]);
+            }, []);
+
+            const removeToast = useCallback((id) => {
+                setToasts(prev => prev.filter(t => t.id !== id));
+            }, []);
+
+            // Theme toggle
             const toggleTheme = () => {
                 setIsDark(!isDark);
                 if (!isDark) document.documentElement.classList.add('dark');
                 else document.documentElement.classList.remove('dark');
             };
 
-            // Filter logic
-            const filteredData = useMemo(() => {
-                if (!search) return colorData;
-                return colorData.map(group => ({
-                    ...group,
-                    colors: group.colors.filter(c => 
-                        c.name.toLowerCase().includes(search.toLowerCase()) || 
-                        c.hex.toLowerCase().includes(search.toLowerCase())
-                    )
-                })).filter(group => group.colors.length > 0);
-            }, [search]);
+            // Firestore Database client (fails gracefully if Firebase script is blocked or offline)
+            const firestoreDb = useMemo(() => {
+                if (dbConfig.useMock || !dbConfig.projectId) return null;
+                try {
+                    if (typeof firebase === 'undefined') {
+                        console.warn("Firebase SDK is not loaded. Sandbox mode is active.");
+                        return null;
+                    }
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp(dbConfig);
+                    }
+                    return firebase.firestore();
+                } catch (e) {
+                    console.error("Firebase startup error:", e);
+                    showToast("Firebase initialization failed.", "error");
+                    return null;
+                }
+            }, [dbConfig, showToast]);
 
-            const totalColors = colorData.reduce((acc, g) => acc + g.colors.length, 0);
-            const filteredTotal = filteredData.reduce((acc, g) => acc + g.colors.length, 0);
+            // Database loaders
+            const loadDatabase = useCallback(async () => {
+                setSyncing(true);
+                
+                // Pull deleted system IDs from Firebase if connected
+                if (firestoreDb) {
+                    try {
+                        const doc = await firestoreDb.collection("settings").doc("deleted_sys").get();
+                        if (doc.exists) {
+                            const ids = doc.data().ids || [];
+                            setDeletedSysIds(ids);
+                            localStorage.setItem(DELETED_SYS_DB_KEY, JSON.stringify(ids));
+                        }
+                    } catch (e) {
+                        console.error("Firestore pull deleted sys error:", e);
+                    }
+                }
+
+                if (firestoreDb) {
+                    try {
+                        const snapshot = await firestoreDb.collection("colors").orderBy("createdAt", "desc").get();
+                        const loaded = [];
+                        snapshot.forEach(doc => {
+                            loaded.push({ id: doc.id, ...doc.data() });
+                        });
+                        setColors(loaded);
+                        showToast("Colors synced with Firestore.", "success");
+                    } catch (e) {
+                        console.error("Firestore fetch error:", e);
+                        showToast("Firestore query failed. Using local storage.", "error");
+                        loadLocalDb();
+                    }
+                } else {
+                    loadLocalDb();
+                }
+                setSyncing(false);
+            }, [firestoreDb, showToast]);
+
+            const loadLocalDb = () => {
+                const raw = localStorage.getItem(OFFLINE_DB_KEY);
+                if (raw) {
+                    try {
+                        setColors(JSON.parse(raw));
+                    } catch (e) {
+                        setColors([]);
+                    }
+                } else {
+                    setColors([]);
+                }
+                const savedDeleted = localStorage.getItem(DELETED_SYS_DB_KEY);
+                if (savedDeleted) {
+                    setDeletedSysIds(JSON.parse(savedDeleted));
+                }
+            };
+
+            useEffect(() => {
+                loadDatabase();
+            }, [loadDatabase]);
+
+            // Format hex inputs to enforce # prefix and limit characters
+            const handleHexInputChange = (val, setter, allowEmpty = false) => {
+                let raw = val.trim();
+                if (allowEmpty && raw === '') {
+                    setter('');
+                    return;
+                }
+                if (!raw.startsWith('#')) {
+                    raw = '#' + raw;
+                }
+                const cleanPart = raw.substring(1).replace(/[^0-9a-fA-F]/g, '');
+                setter('#' + cleanPart.substring(0, 6));
+            };
+
+            // Setup Color Editing
+            const handleEditClick = (color) => {
+                setEditingColor(color);
+                setNewName(color.name);
+                setNewPrimary(color.primary);
+                setNewSecondary(color.secondary === color.primary ? '' : color.secondary);
+                setNewGroup(color.group);
+                setShowAddModal(true);
+            };
+
+            // Color saving (supports both adding new and saving edits)
+            const handleSaveColor = async (e) => {
+                e.preventDefault();
+
+                if (newPrimary.length !== 7) {
+                    showToast("Please enter a valid 7-character primary color hex code.", "error");
+                    return;
+                }
+                if (newSecondary && newSecondary.length !== 7) {
+                    showToast("Please enter a valid 7-character secondary color hex code or clear it.", "error");
+                    return;
+                }
+
+                const finalGroup = newGroup || classifyLayoutGroup(newPrimary);
+
+                if (editingColor) {
+                    if (editingColor.id.startsWith("sys-")) {
+                        const updatedDeleted = [...deletedSysIds, editingColor.id];
+                        setDeletedSysIds(updatedDeleted);
+                        localStorage.setItem(DELETED_SYS_DB_KEY, JSON.stringify(updatedDeleted));
+                        if (firestoreDb) {
+                            try {
+                                await firestoreDb.collection("settings").doc("deleted_sys").set({ ids: updatedDeleted });
+                            } catch (e) {
+                                console.error(e);
+                            }
+                        }
+
+                        const newRef = {
+                            id: "color-" + Date.now(),
+                            name: newName,
+                            primary: newPrimary,
+                            secondary: newSecondary || newPrimary,
+                            group: finalGroup,
+                            createdAt: Date.now()
+                        };
+
+                        if (firestoreDb) {
+                            try {
+                                await firestoreDb.collection("colors").doc(newRef.id).set(newRef);
+                                showToast("Default color modified and saved to Cloud.", "success");
+                            } catch (err) {
+                                saveLocal(newRef);
+                                showToast("Saved modification locally.", "success");
+                            }
+                        } else {
+                            saveLocal(newRef);
+                            showToast("Saved modification locally.", "success");
+                        }
+                    } else {
+                        const updatedRef = {
+                            ...editingColor,
+                            name: newName,
+                            primary: newPrimary,
+                            secondary: newSecondary || newPrimary,
+                            group: finalGroup,
+                            createdAt: editingColor.createdAt || Date.now(), // Preserve timestamp
+                            updatedAt: Date.now()
+                        };
+
+                        if (firestoreDb) {
+                            try {
+                                await firestoreDb.collection("colors").doc(editingColor.id).set(updatedRef);
+                                showToast("Color reference updated in Cloud.", "success");
+                            } catch (err) {
+                                updateLocal(updatedRef);
+                                showToast("Updated locally.", "success");
+                            }
+                        } else {
+                            updateLocal(updatedRef);
+                            showToast("Updated locally.", "success");
+                        }
+                    }
+                } else {
+                    const newRef = {
+                        id: "color-" + Date.now(),
+                        name: newName,
+                        primary: newPrimary,
+                        secondary: newSecondary || newPrimary,
+                        group: finalGroup,
+                        createdAt: Date.now()
+                    };
+
+                    if (firestoreDb) {
+                        try {
+                            await firestoreDb.collection("colors").doc(newRef.id).set(newRef);
+                            showToast("Saved to Cloud Firestore.", "success");
+                        } catch (err) {
+                            saveLocal(newRef);
+                            showToast("Failed to write to Cloud. Saved locally.", "error");
+                        }
+                    } else {
+                        saveLocal(newRef);
+                        showToast("Saved to local sandbox.", "success");
+                    }
+                }
+
+                setNewName('');
+                setNewPrimary('#');
+                setNewSecondary('');
+                setEditingColor(null);
+                setShowAddModal(false);
+                loadDatabase();
+            };
+
+            const saveLocal = (ref) => {
+                const raw = localStorage.getItem(OFFLINE_DB_KEY);
+                const current = raw ? JSON.parse(raw) : [];
+                current.push(ref);
+                localStorage.setItem(OFFLINE_DB_KEY, JSON.stringify(current));
+            };
+
+            const updateLocal = (updatedRef) => {
+                const raw = localStorage.getItem(OFFLINE_DB_KEY);
+                if (raw) {
+                    const current = JSON.parse(raw);
+                    const idx = current.findIndex(c => c.id === updatedRef.id);
+                    if (idx !== -1) {
+                        current[idx] = updatedRef;
+                        localStorage.setItem(OFFLINE_DB_KEY, JSON.stringify(current));
+                    }
+                }
+            };
+
+            const handleDeleteColor = async (id) => {
+                if (id.startsWith("sys-")) {
+                    const updatedDeleted = [...deletedSysIds, id];
+                    setDeletedSysIds(updatedDeleted);
+                    localStorage.setItem(DELETED_SYS_DB_KEY, JSON.stringify(updatedDeleted));
+                    
+                    if (firestoreDb) {
+                        try {
+                            await firestoreDb.collection("settings").doc("deleted_sys").set({ ids: updatedDeleted });
+                            showToast("Removed default color reference.", "info");
+                        } catch (e) {
+                            console.error("Firestore deleted sys save error:", e);
+                            showToast("Removed locally only.", "info");
+                        }
+                    } else {
+                        showToast("Removed locally.", "info");
+                    }
+                } else {
+                    if (firestoreDb) {
+                        try {
+                            await firestoreDb.collection("colors").doc(id).delete();
+                            showToast("Deleted from Cloud Firestore.", "info");
+                        } catch (e) {
+                            console.error("Firestore delete failure:", e);
+                            deleteLocal(id);
+                            showToast("Deleted from local backup.", "info");
+                        }
+                    } else {
+                        deleteLocal(id);
+                        showToast("Deleted from local sandbox.", "info");
+                    }
+                }
+                loadDatabase();
+            };
+
+            const deleteLocal = (id) => {
+                const raw = localStorage.getItem(OFFLINE_DB_KEY);
+                if (raw) {
+                    const current = JSON.parse(raw);
+                    const filtered = current.filter(c => c.id !== id);
+                    localStorage.setItem(OFFLINE_DB_KEY, JSON.stringify(filtered));
+                }
+            };
+
+            const handleSaveDb = (e) => {
+                e.preventDefault();
+                localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(dbConfig));
+                setShowDbModal(false);
+                showToast("Connection settings updated.", "success");
+                loadDatabase();
+            };
+
+            // Sorting, grouping, and filters
+            const groupedColorData = useMemo(() => {
+                const activeSystem = SYSTEM_COLORS.filter(sys => !deletedSysIds.includes(sys.id));
+                const allColors = [...activeSystem, ...colors];
+
+                let filtered = allColors.filter(c => 
+                    c.name.toLowerCase().includes(search.toLowerCase()) ||
+                    c.primary.toLowerCase().includes(search.toLowerCase()) ||
+                    (c.secondary && c.secondary.toLowerCase().includes(search.toLowerCase()))
+                );
+
+                // Chronological & Alphabetical Sorting
+                if (sortBy === 'NEW_TO_OLD') {
+                    filtered.sort((a, b) => b.createdAt - a.createdAt);
+                } else if (sortBy === 'OLD_TO_NEW') {
+                    filtered.sort((a, b) => a.createdAt - b.createdAt);
+                } else if (sortBy === 'NAME_ASC') {
+                    filtered.sort((a, b) => a.name.localeCompare(b.name));
+                } else if (sortBy === 'NAME_DESC') {
+                    filtered.sort((a, b) => b.name.localeCompare(a.name));
+                }
+
+                if (sortMode === 'LAYOUT') {
+                    const matrix = Object.values(LAYOUT_GROUPS).map(groupName => ({
+                        group: groupName,
+                        colors: []
+                    }));
+
+                    filtered.forEach(color => {
+                        const match = matrix.find(m => m.group === color.group);
+                        if (match) match.colors.push(color);
+                    });
+
+                    return matrix.filter(m => m.colors.length > 0);
+                } else {
+                    const harmonyMatrix = [
+                        { group: "Complementary Red Harmonies", colors: [] },
+                        { group: "Analogous Orange & Gold tones", colors: [] },
+                        { group: "Analogous Yellow & Amber tones", colors: [] },
+                        { group: "Triadic Green & Mint harmonies", colors: [] },
+                        { group: "Complementary Blue & Cyan tones", colors: [] },
+                        { group: "Triadic Purple & Violet sets", colors: [] },
+                        { group: "Monochrome & Neutral tones", colors: [] }
+                    ];
+
+                    filtered.forEach(color => {
+                        const category = getHarmonyCategory(color.primary);
+                        const match = harmonyMatrix.find(h => h.group === category);
+                        if (match) {
+                            match.colors.push(color);
+                        } else {
+                            harmonyMatrix[harmonyMatrix.length - 1].colors.push(color);
+                        }
+                    });
+
+                    return harmonyMatrix.filter(h => h.colors.length > 0);
+                }
+            }, [colors, deletedSysIds, search, sortMode, sortBy]);
+
+            const activeSystemCount = SYSTEM_COLORS.length - deletedSysIds.length;
+            const totalCount = activeSystemCount + colors.length;
+            const visibleCount = groupedColorData.reduce((acc, s) => acc + s.colors.length, 0);
+
+            // Check if preview background is ready
+            const getPreviewBg = () => {
+                const isValidPrimary = newPrimary && newPrimary.length === 7;
+                const isValidSecondary = newSecondary && newSecondary.length === 7;
+                if (!isValidPrimary) return 'transparent';
+                if (isValidSecondary) {
+                    return `linear-gradient(135deg, ${newPrimary}, ${newSecondary})`;
+                }
+                return newPrimary;
+            };
 
             return (
-                <div className="min-h-screen pb-20 selection:bg-emerald-500 selection:text-white">
-                    {/* HEADER */}
-                    <header className="sticky top-0 z-50 bg-[#F0F2F5]/80 dark:bg-[#0A0A0A]/80 backdrop-blur-md border-b border-gray-200 dark:border-white/10 shadow-sm">
-                        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-emerald-600 rounded flex items-center justify-center text-white font-bold text-sm shadow-inner">
-                                    CM
-                                </div>
-                                <div>
-                                    <h1 className="text-sm font-bold tracking-tight">Color Matrix Validator</h1>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 font-mono uppercase tracking-widest">Palantir-Grade Token Checker</p>
-                                </div>
+                <div className="min-h-screen pb-20 selection:bg-emerald-500 selection:text-white transition-colors duration-300">
+                    
+                    {/* APP NAVBAR */}
+                    <header className="sticky top-0 z-50 bg-[#F0F2F5]/80 dark:bg-[#0A0A0A]/85 backdrop-blur-md border-b border-gray-200 dark:border-white/5 shadow-sm px-6 h-16 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-emerald-600 rounded flex items-center justify-center text-white font-bold text-sm shadow-inner">
+                                FC
                             </div>
-
-                            <div className="flex items-center gap-4">
-                                <div className="relative hidden md:block">
-                                    <input 
-                                        type="text" 
-                                        placeholder="Filter colors or hex..." 
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                        className="text-xs bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md py-1.5 pl-3 pr-8 w-48 focus:outline-none focus:border-emerald-500 transition-colors"
-                                    />
-                                    <div className="absolute right-2 top-1.5 text-gray-400"><Icon name="search" size={14} /></div>
-                                </div>
-                                
-                                <div className="h-4 w-px bg-gray-300 dark:bg-gray-700"></div>
-
-                                {/* Intersection Pattern Toggle */}
-                                <button 
-                                    onClick={toggleTheme}
-                                    className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 overflow-hidden relative w-10 h-10 flex items-center justify-center"
-                                    aria-label="Toggle Dark Mode"
-                                >
-                                    <div className={`toggle-icon absolute ${isDark ? 'rotated opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
-                                        <Icon name="moon" size={18} />
-                                    </div>
-                                    <div className={`toggle-icon absolute ${isDark ? 'opacity-100 scale-100' : 'rotated opacity-0 scale-50'}`}>
-                                        <Icon name="sun" size={18} />
-                                    </div>
-                                </button>
+                            <div>
+                                <h1 className="text-sm font-bold tracking-tight">Layout & Harmony Color Matrix</h1>
+                                <p className="text-[9px] text-gray-500 dark:text-gray-400 font-mono uppercase tracking-widest">Financial Interface Reference Guide</p>
                             </div>
+                        </div>
+
+                        {/* Search and Database Tools */}
+                        <div className="flex items-center gap-4">
+                            <div className="relative hidden md:block">
+                                <input 
+                                    type="text" 
+                                    placeholder="Filter layout gradients..." 
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    className="text-xs bg-white dark:bg-[#121620] border border-gray-350 dark:border-white/5 rounded-md py-1.5 pl-3 pr-8 w-48 focus:outline-none focus:border-emerald-500 transition-colors"
+                                />
+                                <div className="absolute right-2 top-1.5 text-gray-400"><Icon name="search" size={14} /></div>
+                            </div>
+                            
+                            <div className="h-4 w-px bg-gray-300 dark:bg-gray-700"></div>
+
+                            {/* Add custom token trigger */}
+                            <button 
+                                onClick={() => {
+                                    setEditingColor(null);
+                                    setNewName('');
+                                    setNewPrimary('#');
+                                    setNewSecondary('');
+                                    setShowAddModal(true);
+                                }}
+                                className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1 transition-colors"
+                                title="Add custom reference color"
+                            >
+                                <Icon name="plus" size={12} />
+                                <span>Add Color</span>
+                            </button>
+
+                            {/* Refresh sync trigger */}
+                            <button 
+                                onClick={loadDatabase}
+                                className={`p-2 rounded-full hover:bg-gray-200 dark:hover:bg-white/5 text-gray-400 dark:text-gray-300 transition-colors ${syncing ? 'animate-spin' : ''}`}
+                                title="Sync from Database"
+                            >
+                                <Icon name="refresh" size={14} />
+                            </button>
+
+                            {/* Database settings trigger */}
+                            <button 
+                                onClick={() => setShowDbModal(true)}
+                                className={`p-2 rounded-full hover:bg-gray-200 dark:hover:bg-white/5 transition-colors text-xs font-semibold flex items-center gap-1 ${dbConfig.useMock ? 'text-gray-400' : 'text-emerald-500'}`}
+                                title="Database Connection Configuration"
+                            >
+                                <Icon name="database" size={16} />
+                            </button>
+
+                            {/* Theme switcher */}
+                            <button 
+                                onClick={toggleTheme}
+                                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-white/5 transition-colors"
+                                aria-label="Toggle Dark Mode"
+                            >
+                                {isDark ? <Icon name="sun" size={16} /> : <Icon name="moon" size={16} />}
+                            </button>
                         </div>
                     </header>
 
-                    {/* MAIN CONTENT */}
-                    <main className="max-w-7xl mx-auto px-6 pt-8">
+                    {/* MAIN WORKSPACE VIEW */}
+                    <main className="max-w-7xl mx-auto px-6 pt-8 space-y-6">
                         
                         {/* Executive Summary Card */}
-                        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-apple mb-8 border border-gray-100 dark:border-gray-800 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+                        <div className="bg-white dark:bg-[#0E111A] rounded-xl p-6 shadow-sm border border-gray-200 dark:border-white/5 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
                             <div className="max-w-2xl">
-                                <h2 className="text-lg font-bold mb-2">Matrix Audit Report</h2>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                                    You have submitted <span className="font-bold text-black dark:text-white">{totalColors}</span> unstructured color definitions. 
-                                    This engine has mathematically approximated their hex values and dynamically calculated the WCAG-compliant text contrast (black vs. white) for each token. Review the grid below to identify cognitive overload. Click any token to copy its hex.
+                                <h2 className="text-base font-bold mb-1.5 text-gray-900 dark:text-white">Interface Layout & Harmony Color Guide</h2>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                                    An exhaustive catalog mapping color elements to financial layouts. Click any card to copy. Press <kbd className="px-1.5 py-0.5 rounded border border-gray-300 dark:border-white/10 bg-gray-100 dark:bg-white/5 font-mono text-[10px]">Ctrl+N</kbd> to add a new color, and <kbd className="px-1.5 py-0.5 rounded border border-gray-300 dark:border-white/10 bg-gray-100 dark:bg-white/5 font-mono text-[10px]">Esc</kbd> to exit.
                                 </p>
                             </div>
-                            <div className="flex flex-col items-end shrink-0">
-                                <div className="text-3xl font-bold tracking-tighter">{filteredTotal}</div>
-                                <div className="text-xs font-mono uppercase tracking-widest text-gray-500">Tokens Visible</div>
+                            
+                            <div className="flex flex-col items-end shrink-0 text-right">
+                                <div className="text-2xl font-bold tracking-tighter text-gray-900 dark:text-white">{visibleCount} / {totalCount}</div>
+                                <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">Gradients Displayed</div>
                             </div>
                         </div>
 
-                        {/* GRID LAYOUT */}
+                        {/* SORT/GROUP SELECTOR & CATEGORIES BAR */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between pb-3 border-b border-gray-250 dark:border-white/5 gap-4">
+                            
+                            {/* Dynamic Sort/Group selection tabs */}
+                            <div className="flex flex-wrap gap-2 items-center">
+                                <div className="flex gap-1 bg-gray-200 dark:bg-white/5 p-1 rounded-lg text-xs font-semibold">
+                                    <button 
+                                        onClick={() => setSortMode('LAYOUT')}
+                                        className={`px-3 py-1.5 rounded-md transition-colors ${sortMode === 'LAYOUT' ? 'bg-white dark:bg-[#0E111A] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                                    >
+                                        UI Layout Locations
+                                    </button>
+                                    <button 
+                                        onClick={() => setSortMode('HARMONIES')}
+                                        className={`px-3 py-1.5 rounded-md transition-colors ${sortMode === 'HARMONIES' ? 'bg-white dark:bg-[#0E111A] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                                    >
+                                        Color Theory Harmonies
+                                    </button>
+                                </div>
+
+                                {/* Chronological Sorting Toggles */}
+                                <div className="flex items-center gap-1.5 text-xs font-semibold ml-2">
+                                    <span className="text-gray-400">Sort cards:</span>
+                                    <select 
+                                        value={sortBy} 
+                                        onChange={(e) => setSortBy(e.target.value)}
+                                        className="bg-white dark:bg-[#121620] border border-gray-300 dark:border-white/5 rounded px-2.5 py-1.5 focus:outline-none focus:border-emerald-500 transition-colors"
+                                    >
+                                        <option value="NEW_TO_OLD">New to Old</option>
+                                        <option value="OLD_TO_NEW">Old to New</option>
+                                        <option value="NAME_ASC">Name (A-Z)</option>
+                                        <option value="NAME_DESC">Name (Z-A)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest font-mono self-end">
+                                Grouping: {sortMode === 'LAYOUT' ? 'Dashboard Component Mapping' : 'Mathematical HSL Harmonization'}
+                            </span>
+                        </div>
+
+                        {/* CATALOG GRID MATRIX */}
                         <div className="space-y-12">
-                            {filteredData.map((group, idx) => (
+                            {groupedColorData.map((group, idx) => (
                                 <section key={idx} className="animate-fade-in">
                                     <div className="flex items-center gap-3 mb-4">
-                                        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">{group.group}</h3>
-                                        <div className="h-px flex-1 bg-gradient-to-r from-gray-200 dark:from-gray-800 to-transparent"></div>
+                                        <h3 className="text-xs font-extrabold uppercase tracking-wider text-emerald-500 font-mono">{group.group}</h3>
+                                        <div className="h-px flex-1 bg-gradient-to-r from-gray-200 dark:from-white/10 to-transparent"></div>
                                     </div>
                                     
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 animate-fade-in">
                                         {group.colors.map((color, cIdx) => (
-                                            <ColorCard key={cIdx} color={color} />
+                                            <ColorCard 
+                                                key={color.id || cIdx} 
+                                                color={color} 
+                                                onDelete={handleDeleteColor}
+                                                onEdit={handleEditClick}
+                                            />
                                         ))}
                                     </div>
                                 </section>
                             ))}
                             
-                            {filteredData.length === 0 && (
+                            {groupedColorData.length === 0 && (
                                 <div className="text-center py-20 text-gray-500 dark:text-gray-400 text-sm">
-                                    No colors found matching your filter criteria.
+                                    No colors found matching search criteria.
                                 </div>
                             )}
                         </div>
 
                     </main>
+
+                    {/* DYNAMIC FORM MODAL: ADD / EDIT COLOR */}
+                    {showAddModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                            <div className="bg-white dark:bg-[#0E111A] w-full max-w-sm rounded-xl border border-gray-200 dark:border-white/5 shadow-2xl p-6 text-xs text-gray-700 dark:text-gray-300">
+                                <div className="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-white/5 pb-2">
+                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                                        {editingColor ? "Edit Color Reference" : "Create Custom Color"}
+                                    </h3>
+                                    <button 
+                                        onClick={() => {
+                                            setShowAddModal(false);
+                                            setEditingColor(null);
+                                        }} 
+                                        className="text-lg font-bold hover:text-gray-900 dark:hover:text-white"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                                <form onSubmit={handleSaveColor} className="space-y-4">
+                                    <div>
+                                        <label className="block font-semibold mb-1">Color Name</label>
+                                        <input 
+                                            type="text" 
+                                            required 
+                                            value={newName} 
+                                            onChange={(e) => setNewName(e.target.value)} 
+                                            placeholder="e.g. active link blue" 
+                                            className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-350 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block font-semibold mb-1">Primary Color</label>
+                                            <div className="flex gap-1 items-center">
+                                                <input 
+                                                    type="color" 
+                                                    value={newPrimary.length === 7 ? newPrimary : "#000000"} 
+                                                    onChange={(e) => handleHexInputChange(e.target.value, setNewPrimary, false)} 
+                                                    className="w-8 h-8 rounded cursor-pointer border dark:border-white/5 p-0"
+                                                />
+                                                <input 
+                                                    type="text" 
+                                                    value={newPrimary} 
+                                                    onChange={(e) => handleHexInputChange(e.target.value, setNewPrimary, false)} 
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-300 dark:border-white/5 rounded p-1 font-mono text-[10px]"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block font-semibold mb-1">Secondary Color (Optional)</label>
+                                            <div className="flex gap-1 items-center">
+                                                <input 
+                                                    type="color" 
+                                                    value={newSecondary.length === 7 ? newSecondary : "#000000"} 
+                                                    onChange={(e) => handleHexInputChange(e.target.value, setNewSecondary, true)} 
+                                                    className="w-8 h-8 rounded cursor-pointer border dark:border-white/5 p-0"
+                                                />
+                                                <input 
+                                                    type="text" 
+                                                    value={newSecondary} 
+                                                    placeholder="Blank for solid color"
+                                                    onChange={(e) => handleHexInputChange(e.target.value, setNewSecondary, true)} 
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-350 dark:border-white/5 rounded p-1 font-mono text-[10px]"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="block font-semibold">Layout Section Group</label>
+                                            {!editingColor && (
+                                                <span className="text-[9px] text-emerald-500 font-bold font-mono">Auto-classified</span>
+                                            )}
+                                        </div>
+                                        <select 
+                                            value={newGroup} 
+                                            onChange={(e) => setNewGroup(e.target.value)}
+                                            className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-355 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none font-medium"
+                                        >
+                                            {Object.values(LAYOUT_GROUPS).map(gName => (
+                                                <option key={gName} value={gName}>{gName}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Preview Block */}
+                                    <div 
+                                        className="h-10 w-full rounded-lg border border-black/5 dark:border-white/10 flex items-center justify-center text-[10px] text-gray-400 font-mono" 
+                                        style={{ background: getPreviewBg() }}
+                                    >
+                                        {(!newPrimary || newPrimary.length !== 7) && "Enter valid primary hex code..."}
+                                    </div>
+
+                                    <div className="flex justify-end gap-2 pt-2">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => {
+                                                setShowAddModal(false);
+                                                setEditingColor(null);
+                                            }}
+                                            className="px-3 py-1.5 rounded bg-gray-200 dark:bg-gray-800 font-semibold"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button 
+                                            type="submit" 
+                                            className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
+                                        >
+                                            {editingColor ? "Save Changes" : "Add Reference"}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* DYNAMIC FORM MODAL: FIREBASE CONFIG */}
+                    {showDbModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                            <div className="bg-white dark:bg-[#0E111A] w-full max-w-sm rounded-xl border border-gray-200 dark:border-white/5 shadow-2xl p-6 text-xs text-gray-700 dark:text-gray-300">
+                                <div className="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-white/5 pb-2">
+                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">Firestore Database Settings</h3>
+                                    <button onClick={() => setShowDbModal(false)} className="text-lg font-bold hover:text-gray-900 dark:hover:text-white">&times;</button>
+                                </div>
+                                <form onSubmit={handleSaveDb} className="space-y-4">
+                                    <div className="flex items-center gap-2 p-2 bg-emerald-500/10 rounded border border-emerald-500/20">
+                                        <input 
+                                            type="checkbox" 
+                                            id="mockMode"
+                                            checked={dbConfig.useMock}
+                                            onChange={(e) => setDbConfig({...dbConfig, useMock: e.target.checked})}
+                                            className="w-4 h-4 accent-emerald-500"
+                                        />
+                                        <label htmlFor="mockMode" className="font-semibold select-none cursor-pointer">Use offline Sandbox Mode</label>
+                                    </div>
+
+                                    {!dbConfig.useMock && (
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="block font-semibold mb-1">Project ID</label>
+                                                <input 
+                                                    type="text" 
+                                                    required 
+                                                    value={dbConfig.projectId} 
+                                                    onChange={(e) => setDbConfig({...dbConfig, projectId: e.target.value})} 
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-350 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-semibold mb-1">API Key</label>
+                                                <input 
+                                                    type="password" 
+                                                    required 
+                                                    value={dbConfig.apiKey} 
+                                                    onChange={(e) => setDbConfig({...dbConfig, apiKey: e.target.value})} 
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-355 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-semibold mb-1">Auth Domain</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={dbConfig.authDomain} 
+                                                    onChange={(e) => setDbConfig({...dbConfig, authDomain: e.target.value})} 
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-300 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-semibold mb-1">App ID</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={dbConfig.appId} 
+                                                    onChange={(e) => setDbConfig({...dbConfig, appId: e.target.value})} 
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-300 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-end gap-2 pt-2">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setShowDbModal(false)}
+                                            className="px-3 py-1.5 rounded bg-gray-200 dark:bg-gray-800 font-semibold"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button 
+                                            type="submit" 
+                                            className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
+                                        >
+                                            Save Settings
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TOAST SYSTEM */}
+                    <div className="fixed bottom-6 right-6 z-50 space-y-2">
+                        {toasts.map(toast => (
+                            <div 
+                                key={toast.id}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-lg border backdrop-blur-md shadow-premium animate-fade-in ${
+                                    toast.type === 'success' ? "border-emerald-500 bg-emerald-950/80 text-emerald-300" :
+                                    toast.type === 'error' ? "border-rose-500 bg-rose-950/80 text-rose-300" :
+                                    "border-sky-500 bg-sky-950/80 text-sky-300"
+                                }`}
+                            >
+                                <span className="text-xs font-semibold">{toast.message}</span>
+                                <button onClick={() => removeToast(toast.id)} className="text-[10px] font-bold opacity-60 hover:opacity-100">&times;</button>
+                            </div>
+                        ))}
+                    </div>
+
                 </div>
             );
         };
