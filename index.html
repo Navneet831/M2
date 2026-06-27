@@ -169,186 +169,8 @@
             return LAYOUT_GROUPS.SDB;
         };
 
-        const RAW_SYSTEM_COLORS = [
-            // Backgrounds
-            { id: "sys-bg-1", name: "obsidian abyss", primary: "#030712", secondary: "#0B0F19", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-bg-2", name: "slate canvas", primary: "#F8FAFC", secondary: "#E2E8F0", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-bg-3", name: "grid dark surface", primary: "#0F172A", secondary: "#1E293B", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-bg-4", name: "mist light surface", primary: "#FFFFFF", secondary: "#F1F5F9", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-bg-5", name: "deep space canvas", primary: "#05070E", secondary: "#0F131E", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-bg-6", name: "midnight marine", primary: "#0B132B", secondary: "#1C2541", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-bg-7", name: "soft lavender canvas", primary: "#F3F4F6", secondary: "#EBE8FC", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-bg-8", name: "titanium surface", primary: "#1F2937", secondary: "#111827", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-bg-9", name: "warm chalk", primary: "#FAF9F6", secondary: "#F2EFE9", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-bg-10", name: "obsidian velvet", primary: "#020205", secondary: "#0D0B18", group: LAYOUT_GROUPS.BG, system: true },
-
-            // Headers
-            { id: "sys-hdr-1", name: "emerald topbar", primary: "#065F46", secondary: "#059669", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-hdr-2", name: "indigo navbar", primary: "#312E81", secondary: "#4F46E5", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-hdr-3", name: "carbon dark header", primary: "#111827", secondary: "#1F2937", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-hdr-4", name: "ocean treasury nav", primary: "#0F766E", secondary: "#0D9488", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-hdr-5", name: "snow light topbar", primary: "#FFFFFF", secondary: "#E2E8F0", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-hdr-6", name: "teal velvet navbar", primary: "#115E59", secondary: "#0D9488", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-hdr-7", name: "rose gold header", primary: "#4C0519", secondary: "#881337", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-hdr-8", name: "crimson status banner", primary: "#7F1D1D", secondary: "#B91C1C", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-hdr-9", name: "sunset topnav", primary: "#7C2D12", secondary: "#C2410C", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-hdr-10", name: "steel corporate header", primary: "#374151", secondary: "#4B5563", group: LAYOUT_GROUPS.HDR, system: true },
-
-            // Sidebars
-            { id: "sys-sdb-1", name: "sidebar slate base", primary: "#0F172A", secondary: "#1E293B", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-sdb-2", name: "active link emerald", primary: "#10B981", secondary: "#059669", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-sdb-3", name: "active link indigo", primary: "#6366F1", secondary: "#4F46E5", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-sdb-4", name: "hover highlight gray", primary: "#1E293B", secondary: "#334155", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-sdb-5", name: "sidebar cobalt item", primary: "#3B82F6", secondary: "#1D4ED8", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-sdb-6", name: "active link ruby", primary: "#E11D48", secondary: "#BE123C", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-sdb-7", name: "active link cyan", primary: "#0891B2", secondary: "#0E7490", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-sdb-8", name: "carbon sidebar base", primary: "#18181B", secondary: "#09090B", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-sdb-9", name: "warm sand sidebar", primary: "#E2D9C8", secondary: "#D4C5B9", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-sdb-10", name: "royal sidebar link", primary: "#6D28D9", secondary: "#5B21B6", group: LAYOUT_GROUPS.SDB, system: true },
-
-            // Footers
-            { id: "sys-ftr-1", name: "muted copyright footer", primary: "#0B0F19", secondary: "#111827", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-ftr-2", name: "warm info bar", primary: "#F1F5F9", secondary: "#E2E8F0", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-ftr-3", name: "obsidian trim line", primary: "#1E2937", secondary: "#111827", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-ftr-4", name: "charcoal stats bottom", primary: "#18181B", secondary: "#27272A", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-ftr-5", name: "forest bottomline status", primary: "#064E3B", secondary: "#065F46", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-ftr-6", name: "asphalt footer stats", primary: "#1F2937", secondary: "#111827", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-ftr-7", name: "premium gold border", primary: "#78350F", secondary: "#451A03", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-ftr-8", name: "cloudy neutral footer", primary: "#E2E8F0", secondary: "#CBD5E1", group: LAYOUT_GROUPS.FTR, system: true },
-
-            // 122 Merged colors from old.html
-            { id: "sys-old-1", name: "calming purple", primary: "#9B84B8", secondary: "#9B84B8", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-2", name: "quiet Abyss", primary: "#0B101E", secondary: "#0B101E", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-3", name: "perfect peach", primary: "#FFDCB8", secondary: "#FFDCB8", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-4", name: "Meski black", primary: "#0F1110", secondary: "#0F1110", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-5", name: "electicity blue", primary: "#0FF0FC", secondary: "#0FF0FC", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-6", name: "Dark Sapphire", primary: "#0F1E38", secondary: "#0F1E38", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-7", name: "macadamia beige", primary: "#F0E0C8", secondary: "#F0E0C8", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-8", name: "fence green", primary: "#3B5E45", secondary: "#3B5E45", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-9", name: "fine turquoise", primary: "#48CED9", secondary: "#48CED9", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-10", name: "stellar explorer", primary: "#1B2838", secondary: "#1B2838", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-11", name: "exotic summer", primary: "#FF7A59", secondary: "#FF7A59", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-12", name: "extreme burgundy", primary: "#4A0404", secondary: "#4A0404", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-13", name: "shimmer pearl", primary: "#FDFBF7", secondary: "#FDFBF7", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-14", name: "rich maroon", primary: "#6A0C0B", secondary: "#6A0C0B", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-15", name: "Soft yellow green", primary: "#D5E59B", secondary: "#D5E59B", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-16", name: "deep muted green", primary: "#2B4231", secondary: "#2B4231", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-17", name: "neon green", primary: "#39FF14", secondary: "#39FF14", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-18", name: "chrysocolla blue", primary: "#2A8F9D", secondary: "#2A8F9D", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-19", name: "mutated blue green", primary: "#4A787A", secondary: "#4A787A", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-20", name: "fresh green", primary: "#69D025", secondary: "#69D025", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-21", name: "reddish pink", primary: "#FF6B8B", secondary: "#FF6B8B", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-22", name: "pale yellow", primary: "#FFFFBF", secondary: "#FFFFBF", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-23", name: "bright vibrant cyan", primary: "#00FFFF", secondary: "#00FFFF", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-24", name: "deep navy blue", primary: "#000080", secondary: "#000080", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-25", name: "lavender purple", primary: "#967BB6", secondary: "#967BB6", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-26", name: "warm pastel yellow", primary: "#FDFD96", secondary: "#FDFD96", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-27", name: "dark slate grey", primary: "#2F4F4F", secondary: "#2F4F4F", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-28", name: "antique ruby", primary: "#841B2D", secondary: "#841B2D", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-29", name: "bistre", primary: "#3D2B1F", secondary: "#3D2B1F", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-30", name: "brown sugar", primary: "#AF6E4D", secondary: "#AF6E4D", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-31", name: "thistle", primary: "#D8BFD8", secondary: "#D8BFD8", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-32", name: "liberty", primary: "#545AA7", secondary: "#545AA7", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-33", name: "tan", primary: "#D2B48C", secondary: "#D2B48C", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-34", name: "liver", primary: "#534B4F", secondary: "#534B4F", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-35", name: "talismanic teal", primary: "#006D5B", secondary: "#006D5B", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-36", name: "almond roca", primary: "#EADDCD", secondary: "#EADDCD", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-37", name: "transparent yellow", primary: "#F4F098", secondary: "#F4F098", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-38", name: "cocoa dark brown", primary: "#32170B", secondary: "#32170B", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-39", name: "steel grey", primary: "#71797E", secondary: "#71797E", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-40", name: "powder blue", primary: "#B0E0E6", secondary: "#B0E0E6", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-41", name: "sandswip", primary: "#F5E7A2", secondary: "#F5E7A2", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-42", name: "coconut cream", primary: "#F8F4E6", secondary: "#F8F4E6", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-43", name: "orchid", primary: "#DA70D6", secondary: "#DA70D6", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-44", name: "camellia", primary: "#F67381", secondary: "#F67381", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-45", name: "magnolia", primary: "#F8F4FF", secondary: "#F8F4FF", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-46", name: "umber", primary: "#635147", secondary: "#635147", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-47", name: "marble", primary: "#F2F0E6", secondary: "#F2F0E6", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-48", name: "apricot", primary: "#FBCEB1", secondary: "#FBCEB1", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-49", name: "mango", primary: "#FFC324", secondary: "#FFC324", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-50", name: "pomegranate", primary: "#C0392B", secondary: "#C0392B", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-51", name: "harbor", primary: "#30415D", secondary: "#30415D", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-52", name: "glacier", primary: "#78B1BF", secondary: "#78B1BF", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-53", name: "pollen", primary: "#EEEEAA", secondary: "#EEEEAA", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-54", name: "pickele green", primary: "#194225", secondary: "#194225", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-55", name: "glaucous", primary: "#6082B6", secondary: "#6082B6", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-56", name: "pink pearl", primary: "#E7ACCF", secondary: "#E7ACCF", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-57", name: "sapphire", primary: "#0F52BA", secondary: "#0F52BA", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-58", name: "turmeric", primary: "#FFC000", secondary: "#FFC000", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-59", name: "green pea", primary: "#1D5921", secondary: "#1D5921", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-60", name: "rasberry", primary: "#E30B5D", secondary: "#E30B5D", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-61", name: "lemonade", primary: "#F8C1CC", secondary: "#F8C1CC", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-62", name: "oak", primary: "#4F301F", secondary: "#4F301F", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-63", name: "olive", primary: "#808000", secondary: "#808000", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-64", name: "sage", primary: "#BCBB8E", secondary: "#BCBB8E", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-65", name: "ivory", primary: "#FFFFF0", secondary: "#FFFFF0", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-66", name: "teracotta", primary: "#E2725B", secondary: "#E2725B", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-67", name: "honey", primary: "#FFBD31", secondary: "#FFBD31", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-68", name: "sand", primary: "#C2B280", secondary: "#C2B280", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-69", name: "white smoke", primary: "#F5F5F5", secondary: "#F5F5F5", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-70", name: "wine", primary: "#722F37", secondary: "#722F37", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-71", name: "double teal", primary: "#006666", secondary: "#006666", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-72", name: "lemon yellow", primary: "#FFF44F", secondary: "#FFF44F", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-73", name: "robbin egg blue", primary: "#00CCCC", secondary: "#00CCCC", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-74", name: "black olive", primary: "#3B3C36", secondary: "#3B3C36", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-75", name: "persian pink", primary: "#F77FBE", secondary: "#F77FBE", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-76", name: "lavender pink", primary: "#FBAED2", secondary: "#FBAED2", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-77", name: "platinum", primary: "#E5E4E2", secondary: "#E5E4E2", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-78", name: "photo blue", primary: "#9EB9D4", secondary: "#9EB9D4", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-79", name: "misty blue", primary: "#A0AFCE", secondary: "#A0AFCE", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-80", name: "gun metal grey", primary: "#53565B", secondary: "#53565B", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-81", name: "creamy avocado", primary: "#C0E181", secondary: "#C0E181", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-82", name: "french blue", primary: "#0072BB", secondary: "#0072BB", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-83", name: "plum wine", primary: "#5A3147", secondary: "#5A3147", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-84", name: "butter cream", primary: "#EFE2B4", secondary: "#EFE2B4", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-85", name: "maroon", primary: "#800000", secondary: "#800000", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-86", name: "Midnight orchid", primary: "#4D1A53", secondary: "#4D1A53", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-87", name: "celadon court", primary: "#B8D8BE", secondary: "#B8D8BE", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-88", name: "indigo atoll", primary: "#1D315C", secondary: "#1D315C", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-89", name: "horizon blue", primary: "#8FB8DE", secondary: "#8FB8DE", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-90", name: "warm cement", primary: "#B5B2A8", secondary: "#B5B2A8", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-91", name: "ash white", primary: "#F2F0ED", secondary: "#F2F0ED", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-92", name: "Carbon black", primary: "#1C1C1C", secondary: "#1C1C1C", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-93", name: "bone", primary: "#E3DAC9", secondary: "#E3DAC9", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-94", name: "rosy copper", primary: "#C87661", secondary: "#C87661", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-95", name: "pumpkin spice", primary: "#C96222", secondary: "#C96222", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-96", name: "Beige", primary: "#F5F5DC", secondary: "#F5F5DC", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-97", name: "deep mocha", primary: "#4A3028", secondary: "#4A3028", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-98", name: "vibrant coral", primary: "#FF5E4D", secondary: "#FF5E4D", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-99", name: "albaster grey", primary: "#ECEAE4", secondary: "#ECEAE4", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-100", name: "soft linen", primary: "#F2ECE1", secondary: "#F2ECE1", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-101", name: "dark goldernrod", primary: "#B8860B", secondary: "#B8860B", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-102", name: "emeral spring", primary: "#2ECC71", secondary: "#2ECC71", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-103", name: "electric lime", primary: "#CCFF00", secondary: "#CCFF00", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-104", name: "jet black", primary: "#0A0A0A", secondary: "#0A0A0A", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-105", name: "aero blue", primary: "#C0E8D5", secondary: "#C0E8D5", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-106", name: "pelorous", primary: "#3EABBC", secondary: "#3EABBC", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-107", name: "graphite", primary: "#383838", secondary: "#383838", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-108", name: "darknude", primary: "#CCAB95", secondary: "#CCAB95", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-109", name: "silver pink", primary: "#C4AEAE", secondary: "#C4AEAE", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-110", name: "antique bronze", primary: "#665D1E", secondary: "#665D1E", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-111", name: "ochre", primary: "#CC7722", secondary: "#CC7722", group: LAYOUT_GROUPS.SDB, system: true },
-            { id: "sys-old-112", name: "FLoral white", primary: "#FFFAF0", secondary: "#FFFAF0", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-113", name: "Corn silk", primary: "#FFF8DC", secondary: "#FFF8DC", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-114", name: "rose Ebony", primary: "#674846", secondary: "#674846", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-115", name: "Midnight green", primary: "#004953", secondary: "#004953", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-116", name: "tea green", primary: "#D0F0C0", secondary: "#D0F0C0", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-117", name: "Lavender Bluch", primary: "#FFF0F5", secondary: "#FFF0F5", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-118", name: "claret", primary: "#7F1734", secondary: "#7F1734", group: LAYOUT_GROUPS.FTR, system: true },
-            { id: "sys-old-119", name: "night SKY", primary: "#1A1A2E", secondary: "#1A1A2E", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-120", name: "Blue SKy", primary: "#87CEEB", secondary: "#87CEEB", group: LAYOUT_GROUPS.HDR, system: true },
-            { id: "sys-old-121", name: "ghost white", primary: "#F8F8FF", secondary: "#F8F8FF", group: LAYOUT_GROUPS.BG, system: true },
-            { id: "sys-old-122", name: "Amethyst", primary: "#9966CC", secondary: "#9966CC", group: LAYOUT_GROUPS.SDB, system: true }
-        ];
-
-        const SYSTEM_COLORS = RAW_SYSTEM_COLORS.map((color, index) => ({
-            ...color,
-            createdAt: index
-        }));
-
         const DB_CONFIG_KEY = "aura_firebase_exhaustive_config";
         const OFFLINE_DB_KEY = "aura_local_exhaustive_ref";
-        const DELETED_SYS_DB_KEY = "aura_deleted_sys_colors";
 
         // ==========================================
         // MINIMAL COLOR CARD REFERENCE COMPONENT
@@ -453,10 +275,7 @@
             const [colors, setColors] = useState([]);
             const [user, setUser] = useState(null);
             const [editingColor, setEditingColor] = useState(null);
-            const [deletedSysIds, setDeletedSysIds] = useState(() => {
-                const saved = localStorage.getItem(DELETED_SYS_DB_KEY);
-                return saved ? JSON.parse(saved) : [];
-            });
+            const [authLoading, setAuthLoading] = useState(true);
 
             // Database Settings State
             const [dbConfig, setDbConfig] = useState(() => {
@@ -528,6 +347,10 @@
                 else document.documentElement.classList.remove('dark');
             };
 
+            const isSandbox = useMemo(() => {
+                return dbConfig.useMock || typeof firebase === 'undefined';
+            }, [dbConfig.useMock]);
+
             // Firestore Database client (fails gracefully if Firebase script is blocked or offline)
             const firestoreDb = useMemo(() => {
                 if (dbConfig.useMock || !dbConfig.projectId) return null;
@@ -553,6 +376,7 @@
                     try {
                         const unsubscribe = firebase.auth().onAuthStateChanged((u) => {
                             setUser(u);
+                            setAuthLoading(false);
                             if (u) {
                                 showToast(`Welcome back, ${u.displayName || "User"}!`, "success");
                             }
@@ -560,32 +384,16 @@
                         return unsubscribe;
                     } catch (e) {
                         console.error("Authentication observer error:", e);
+                        setAuthLoading(false);
                     }
+                } else {
+                    setAuthLoading(false);
                 }
             }, [firestoreDb, showToast]);
 
-            // Database loaders
+            // Database loaders (loads strictly from Firestore query or local Storage sandbox fallback)
             const loadDatabase = useCallback(async () => {
                 setSyncing(true);
-                
-                // Pull deleted system IDs from Firebase if connected & authenticated
-                if (firestoreDb && user) {
-                    try {
-                        const doc = await firestoreDb.collection("users").doc(user.uid).collection("settings").doc("deleted_sys").get();
-                        if (doc.exists) {
-                            const ids = doc.data().ids || [];
-                            setDeletedSysIds(ids);
-                            localStorage.setItem(DELETED_SYS_DB_KEY + "_" + user.uid, JSON.stringify(ids));
-                        }
-                    } catch (e) {
-                        console.error("Firestore pull deleted sys error:", e);
-                    }
-                } else {
-                    const savedDeleted = localStorage.getItem(DELETED_SYS_DB_KEY);
-                    if (savedDeleted) {
-                        setDeletedSysIds(JSON.parse(savedDeleted));
-                    }
-                }
 
                 if (firestoreDb && user) {
                     try {
@@ -597,10 +405,10 @@
                             loaded.push({ id: doc.id, ...doc.data() });
                         });
                         setColors(loaded);
-                        showToast("Colors synced with Cloud.", "success");
+                        showToast("Colors loaded from Cloud Database.", "success");
                     } catch (e) {
                         console.error("Firestore fetch error:", e);
-                        showToast("Firestore query failed. Using local storage.", "error");
+                        showToast("Firestore query failed. Using sandbox fallback.", "error");
                         loadLocalDb();
                     }
                 } else {
@@ -623,8 +431,10 @@
             };
 
             useEffect(() => {
-                loadDatabase();
-            }, [loadDatabase]);
+                if (isSandbox || user) {
+                    loadDatabase();
+                }
+            }, [user, isSandbox, loadDatabase]);
 
             // Authentication Handlers
             const handleSignIn = async () => {
@@ -649,6 +459,7 @@
                     if (typeof firebase !== 'undefined') {
                         await firebase.auth().signOut();
                         setUser(null);
+                        setColors([]);
                         showToast("Signed out successfully.", "info");
                     }
                 } catch (e) {
@@ -681,7 +492,54 @@
                 setShowAddModal(true);
             };
 
-            // Color saving (supports both adding new and saving edits)
+            // Seeding function: fetches colors.json and commits them to the database
+            const handleSeedDatabase = async () => {
+                setSyncing(true);
+                showToast("Fetching baseline colors guide from colors.json...", "info");
+                try {
+                    const response = await fetch('colors.json');
+                    const seedList = await response.json();
+                    
+                    if (firestoreDb && user) {
+                        showToast("Writing baseline colors to Firestore...", "info");
+                        // Commit in batches of 100
+                        const batchSize = 100;
+                        for (let i = 0; i < seedList.length; i += batchSize) {
+                            const batch = firestoreDb.batch();
+                            const chunk = seedList.slice(i, i + batchSize);
+                            chunk.forEach(color => {
+                                const docRef = firestoreDb.collection("colors").doc(color.id + "_" + user.uid);
+                                batch.set(docRef, {
+                                    name: color.name,
+                                    primary: color.primary,
+                                    secondary: color.secondary,
+                                    group: color.group,
+                                    createdAt: color.createdAt,
+                                    userId: user.uid,
+                                    system: true
+                                });
+                            });
+                            await batch.commit();
+                        }
+                        showToast("Cloud Database successfully seeded with 160 colors!", "success");
+                    } else {
+                        // Seed localStorage sandbox
+                        const formattedList = seedList.map(c => ({
+                            ...c,
+                            userId: "sandbox"
+                        }));
+                        localStorage.setItem(OFFLINE_DB_KEY, JSON.stringify(formattedList));
+                        showToast("Local sandbox database seeded with 160 colors!", "success");
+                    }
+                    loadDatabase();
+                } catch (e) {
+                    console.error("Seeding error:", e);
+                    showToast("Failed to seed: ensure colors.json is present.", "error");
+                }
+                setSyncing(false);
+            };
+
+            // Color saving (supports both adding new and saving edits directly in the DB)
             const handleSaveColor = async (e) => {
                 e.preventDefault();
 
@@ -697,69 +555,33 @@
                 const finalGroup = newGroup || classifyLayoutGroup(newPrimary);
 
                 if (editingColor) {
-                    if (editingColor.id.startsWith("sys-")) {
-                        const updatedDeleted = [...deletedSysIds, editingColor.id];
-                        setDeletedSysIds(updatedDeleted);
-                        const storageKey = user ? (DELETED_SYS_DB_KEY + "_" + user.uid) : DELETED_SYS_DB_KEY;
-                        localStorage.setItem(storageKey, JSON.stringify(updatedDeleted));
-                        if (firestoreDb && user) {
-                            try {
-                                await firestoreDb.collection("users").doc(user.uid).collection("settings").doc("deleted_sys").set({ ids: updatedDeleted });
-                            } catch (e) {
-                                console.error(e);
-                            }
-                        }
+                    const updatedRef = {
+                        ...editingColor,
+                        name: newName,
+                        primary: newPrimary,
+                        secondary: newSecondary || newPrimary,
+                        group: finalGroup,
+                        createdAt: editingColor.createdAt || Date.now(), // Preserve timestamp
+                        updatedAt: Date.now(),
+                        userId: user ? user.uid : "sandbox"
+                    };
 
-                        const newRef = {
-                            id: "color-" + Date.now(),
-                            name: newName,
-                            primary: newPrimary,
-                            secondary: newSecondary || newPrimary,
-                            group: finalGroup,
-                            createdAt: Date.now(),
-                            userId: user ? user.uid : "sandbox"
-                        };
-
-                        if (firestoreDb && user) {
-                            try {
-                                await firestoreDb.collection("colors").doc(newRef.id).set(newRef);
-                                showToast("Default color modified and saved to Cloud.", "success");
-                            } catch (err) {
-                                saveLocal(newRef);
-                                showToast("Saved modification locally.", "success");
-                            }
-                        } else {
-                            saveLocal(newRef);
-                            showToast("Saved modification locally.", "success");
-                        }
-                    } else {
-                        const updatedRef = {
-                            ...editingColor,
-                            name: newName,
-                            primary: newPrimary,
-                            secondary: newSecondary || newPrimary,
-                            group: finalGroup,
-                            createdAt: editingColor.createdAt || Date.now(), // Preserve timestamp
-                            updatedAt: Date.now(),
-                            userId: user ? user.uid : (editingColor.userId || "sandbox")
-                        };
-
-                        if (firestoreDb && user) {
-                            try {
-                                await firestoreDb.collection("colors").doc(editingColor.id).set(updatedRef);
-                                showToast("Color reference updated in Cloud.", "success");
-                            } catch (err) {
-                                updateLocal(updatedRef);
-                                showToast("Updated locally.", "success");
-                            }
-                        } else {
+                    if (firestoreDb && user) {
+                        try {
+                            await firestoreDb.collection("colors").doc(editingColor.id).set(updatedRef);
+                            showToast("Color reference updated in Cloud Database.", "success");
+                        } catch (err) {
                             updateLocal(updatedRef);
                             showToast("Updated locally.", "success");
                         }
+                    } else {
+                        updateLocal(updatedRef);
+                        showToast("Updated locally.", "success");
                     }
                 } else {
+                    const newId = "color-" + Date.now();
                     const newRef = {
-                        id: "color-" + Date.now(),
+                        id: newId,
                         name: newName,
                         primary: newPrimary,
                         secondary: newSecondary || newPrimary,
@@ -770,15 +592,15 @@
 
                     if (firestoreDb && user) {
                         try {
-                            await firestoreDb.collection("colors").doc(newRef.id).set(newRef);
-                            showToast("Saved to Cloud Firestore.", "success");
+                            await firestoreDb.collection("colors").doc(newId).set(newRef);
+                            showToast("Saved to Cloud Database.", "success");
                         } catch (err) {
                             saveLocal(newRef);
                             showToast("Failed to write to Cloud. Saved locally.", "error");
                         }
                     } else {
                         saveLocal(newRef);
-                        showToast("Saved to local sandbox.", "success");
+                        showToast("Saved to local database.", "success");
                     }
                 }
 
@@ -810,37 +632,18 @@
             };
 
             const handleDeleteColor = async (id) => {
-                if (id.startsWith("sys-")) {
-                    const updatedDeleted = [...deletedSysIds, id];
-                    setDeletedSysIds(updatedDeleted);
-                    const storageKey = user ? (DELETED_SYS_DB_KEY + "_" + user.uid) : DELETED_SYS_DB_KEY;
-                    localStorage.setItem(storageKey, JSON.stringify(updatedDeleted));
-                    
-                    if (firestoreDb && user) {
-                        try {
-                            await firestoreDb.collection("users").doc(user.uid).collection("settings").doc("deleted_sys").set({ ids: updatedDeleted });
-                            showToast("Removed default color reference.", "info");
-                        } catch (e) {
-                            console.error("Firestore deleted sys save error:", e);
-                            showToast("Removed locally only.", "info");
-                        }
-                    } else {
-                        showToast("Removed locally.", "info");
+                if (firestoreDb && user) {
+                    try {
+                        await firestoreDb.collection("colors").doc(id).delete();
+                        showToast("Deleted from Cloud Database.", "info");
+                    } catch (e) {
+                        console.error("Firestore delete failure:", e);
+                        deleteLocal(id);
+                        showToast("Deleted from local backup.", "info");
                     }
                 } else {
-                    if (firestoreDb && user) {
-                        try {
-                            await firestoreDb.collection("colors").doc(id).delete();
-                            showToast("Deleted from Cloud Firestore.", "info");
-                        } catch (e) {
-                            console.error("Firestore delete failure:", e);
-                            deleteLocal(id);
-                            showToast("Deleted from local backup.", "info");
-                        }
-                    } else {
-                        deleteLocal(id);
-                        showToast("Deleted from local sandbox.", "info");
-                    }
+                    deleteLocal(id);
+                    showToast("Deleted from local database.", "info");
                 }
                 loadDatabase();
             };
@@ -864,10 +667,7 @@
 
             // Sorting, grouping, and filters
             const groupedColorData = useMemo(() => {
-                const activeSystem = SYSTEM_COLORS.filter(sys => !deletedSysIds.includes(sys.id));
-                const allColors = [...activeSystem, ...colors];
-
-                let filtered = allColors.filter(c => 
+                let filtered = colors.filter(c => 
                     c.name.toLowerCase().includes(search.toLowerCase()) ||
                     c.primary.toLowerCase().includes(search.toLowerCase()) ||
                     (c.secondary && c.secondary.toLowerCase().includes(search.toLowerCase()))
@@ -919,10 +719,8 @@
 
                     return harmonyMatrix.filter(h => h.colors.length > 0);
                 }
-            }, [colors, deletedSysIds, search, sortMode, sortBy]);
+            }, [colors, search, sortMode, sortBy]);
 
-            const activeSystemCount = SYSTEM_COLORS.length - deletedSysIds.length;
-            const totalCount = activeSystemCount + colors.length;
             const visibleCount = groupedColorData.reduce((acc, s) => acc + s.colors.length, 0);
 
             // Check if preview background is ready
@@ -935,6 +733,71 @@
                 }
                 return newPrimary;
             };
+
+            // Loading screen while checking authentication state on boot
+            if (authLoading) {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center bg-[#05070C] text-white">
+                        <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p className="text-xs font-mono tracking-widest text-gray-500 uppercase">Synchronizing Authentication Session...</p>
+                    </div>
+                );
+            }
+
+            // AUTH BLOCK ON OPENING SCREEN (not in sandbox mode)
+            if (!isSandbox && !user) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-[#05070C] text-white p-4 relative overflow-hidden">
+                        {/* Background glassmorphic visual layout */}
+                        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-emerald-600/10 rounded-full blur-[160px]"></div>
+                        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[160px]"></div>
+                        
+                        <div className="w-full max-w-md bg-white/[0.03] border border-white/10 rounded-2xl p-8 backdrop-blur-2xl shadow-2xl space-y-6 text-center z-10">
+                            <div className="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-inner mx-auto">
+                                FC
+                            </div>
+                            <div className="space-y-2">
+                                <h1 className="text-lg font-bold tracking-tight">Layout & Harmony Color Matrix</h1>
+                                <p className="text-xs text-gray-400 max-w-xs mx-auto leading-relaxed">
+                                    Exhaustive layout reference catalog for financial dashboards. Sign in with your Google account to access your workspace database.
+                                </p>
+                            </div>
+
+                            <button 
+                                onClick={handleSignIn}
+                                className="w-full py-3 px-4 rounded-xl bg-white hover:bg-gray-100 text-gray-900 font-semibold text-xs flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                            >
+                                <Icon name="google" size={18} />
+                                <span>Sign In with Google</span>
+                            </button>
+                            
+                            <div className="pt-2 flex flex-col items-center gap-1">
+                                <span className="text-[9px] text-gray-500 font-mono tracking-widest uppercase">DEPLOYMENT ENDPOINT:</span>
+                                <a href="https://appcolors.vercel.app/" target="_blank" className="text-[10px] text-emerald-500 hover:text-emerald-400 font-semibold underline font-mono">
+                                    appcolors.vercel.app
+                                </a>
+                            </div>
+                        </div>
+
+                        {/* TOAST SYSTEM (In Auth mode) */}
+                        <div className="fixed bottom-6 right-6 z-50 space-y-2">
+                            {toasts.map(toast => (
+                                <div 
+                                    key={toast.id}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-lg border backdrop-blur-md shadow-premium animate-fade-in ${
+                                        toast.type === 'success' ? "border-emerald-500 bg-emerald-950/80 text-emerald-300" :
+                                        toast.type === 'error' ? "border-rose-500 bg-rose-950/80 text-rose-300" :
+                                        "border-sky-500 bg-sky-950/80 text-sky-300"
+                                    }`}
+                                >
+                                    <span className="text-xs font-semibold">{toast.message}</span>
+                                    <button onClick={() => removeToast(toast.id)} className="text-[10px] font-bold opacity-60 hover:opacity-100">&times;</button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            }
 
             return (
                 <div className="min-h-screen pb-20 selection:bg-emerald-500 selection:text-white transition-colors duration-300">
@@ -966,35 +829,42 @@
                             
                             <div className="h-4 w-px bg-gray-300 dark:bg-gray-700"></div>
 
-                            {/* Google Sign-in trigger */}
+                            {/* User details or Sandbox mode badge */}
                             {user ? (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-3 bg-gray-200/50 dark:bg-white/5 px-3 py-1.5 rounded-lg border border-black/5 dark:border-white/5">
                                     {user.photoURL ? (
-                                        <img src={user.photoURL} alt={user.displayName} className="w-6 h-6 rounded-full border border-emerald-500 shadow-sm" />
+                                        <img src={user.photoURL} alt={user.displayName} className="w-7 h-7 rounded-full border border-emerald-500 shadow-sm" />
                                     ) : (
-                                        <div className="w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center text-white text-[9px] font-bold">
+                                        <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center text-white text-[9px] font-bold">
                                             {user.displayName ? user.displayName.substring(0, 2).toUpperCase() : "US"}
                                         </div>
                                     )}
                                     <div className="hidden sm:block text-right">
-                                        <p className="text-[10px] font-bold leading-tight">{user.displayName || "User"}</p>
+                                        <p className="text-[10px] font-extrabold leading-tight text-gray-900 dark:text-white">{user.displayName || "User"}</p>
                                         <button 
                                             onClick={handleSignOut}
-                                            className="text-[9px] text-rose-500 hover:text-rose-400 font-mono uppercase tracking-wider block"
+                                            className="text-[9px] text-rose-500 hover:text-rose-400 font-mono uppercase tracking-wider block font-bold transition-colors"
                                         >
                                             Sign Out
                                         </button>
                                     </div>
                                 </div>
                             ) : (
-                                <button 
-                                    onClick={handleSignIn}
-                                    className="px-2.5 py-1.5 rounded border border-emerald-600/30 text-emerald-500 hover:bg-emerald-600/10 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                                    title="Sign in with your Google account"
-                                >
-                                    <Icon name="google" size={12} />
-                                    <span className="hidden sm:inline">Sign In</span>
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <span className="px-2 py-1 rounded-md bg-amber-500/10 text-amber-500 text-[9px] font-mono font-bold border border-amber-500/20">
+                                        SANDBOX
+                                    </span>
+                                    {typeof firebase !== 'undefined' && (
+                                        <button 
+                                            onClick={handleSignIn}
+                                            className="px-2.5 py-1.5 rounded border border-emerald-600/30 text-emerald-500 hover:bg-emerald-600/10 text-[10px] font-semibold flex items-center gap-1.5 transition-colors"
+                                            title="Sign in with your Google account"
+                                        >
+                                            <Icon name="google" size={10} />
+                                            <span>Sign In</span>
+                                        </button>
+                                    )}
+                                </div>
                             )}
 
                             {/* Add custom token trigger */}
@@ -1055,8 +925,8 @@
                             </div>
                             
                             <div className="flex flex-col items-end shrink-0 text-right">
-                                <div className="text-2xl font-bold tracking-tighter text-gray-900 dark:text-white">{visibleCount} / {totalCount}</div>
-                                <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">Gradients Displayed</div>
+                                <div className="text-2xl font-bold tracking-tighter text-gray-900 dark:text-white">{colors.length}</div>
+                                <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">Colors In Database</div>
                             </div>
                         </div>
 
@@ -1101,6 +971,26 @@
                             </span>
                         </div>
 
+                        {/* COLD START / EMPTY STATE BANNER */}
+                        {colors.length === 0 && (
+                            <div className="bg-white dark:bg-[#0E111A] rounded-xl p-10 text-center border border-dashed border-gray-300 dark:border-white/10 space-y-4 animate-fade-in">
+                                <div className="text-gray-400 dark:text-gray-500 max-w-md mx-auto">
+                                    <div className="text-emerald-500 flex justify-center mb-4"><Icon name="database" size={40} /></div>
+                                    <p className="text-sm font-bold text-gray-900 dark:text-white mb-1">Your Database is Empty</p>
+                                    <p className="text-xs text-gray-550 leading-relaxed">
+                                        No color configurations were found. Seed the database with the default set of 160 layout colors loaded from colors.json.
+                                    </p>
+                                </div>
+                                <button 
+                                    onClick={handleSeedDatabase}
+                                    className="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition-colors inline-flex items-center gap-2"
+                                >
+                                    <Icon name="plus" size={14} />
+                                    <span>Seed 160 Default Colors</span>
+                                </button>
+                            </div>
+                        )}
+
                         {/* CATALOG GRID MATRIX */}
                         <div className="space-y-12">
                             {groupedColorData.map((group, idx) => (
@@ -1123,7 +1013,7 @@
                                 </section>
                             ))}
                             
-                            {groupedColorData.length === 0 && (
+                            {colors.length > 0 && groupedColorData.length === 0 && (
                                 <div className="text-center py-20 text-gray-500 dark:text-gray-400 text-sm">
                                     No colors found matching search criteria.
                                 </div>
@@ -1194,7 +1084,7 @@
                                                     value={newSecondary} 
                                                     placeholder="Blank for solid color"
                                                     onChange={(e) => handleHexInputChange(e.target.value, setNewSecondary, true)} 
-                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-350 dark:border-white/5 rounded p-1 font-mono text-[10px]"
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-355 dark:border-white/5 rounded p-1 font-mono text-[10px]"
                                                 />
                                             </div>
                                         </div>
@@ -1277,7 +1167,7 @@
                                                     required 
                                                     value={dbConfig.projectId} 
                                                     onChange={(e) => setDbConfig({...dbConfig, projectId: e.target.value})} 
-                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-350 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                    className="w-full bg-gray-50 dark:bg-gray-955 border border-gray-355 dark:border-white/5 rounded p-2 focus:ring-1 focus:ring-emerald-500 outline-none"
                                                 />
                                             </div>
                                             <div>
