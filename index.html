@@ -72,6 +72,46 @@
             };
         };
 
+        const hexToRgbString = (hex) => {
+            const { r, g, b } = hexToRgb(hex);
+            return `rgb(${r}, ${g}, ${b})`;
+        };
+
+        const hexToOklchString = (hex) => {
+            if (!hex || hex.length !== 7) return "oklch(0 0 0)";
+            const { r, g, b } = hexToRgb(hex);
+            
+            // 1. sRGB to linear RGB
+            let r_lin = r / 255;
+            let g_lin = g / 255;
+            let b_lin = b / 255;
+            
+            r_lin = r_lin <= 0.04045 ? r_lin / 12.92 : Math.pow((r_lin + 0.055) / 1.055, 2.4);
+            g_lin = g_lin <= 0.04045 ? g_lin / 12.92 : Math.pow((g_lin + 0.055) / 1.055, 2.4);
+            b_lin = b_lin <= 0.04045 ? b_lin / 12.92 : Math.pow((b_lin + 0.055) / 1.055, 2.4);
+            
+            // 2. Linear sRGB to LMS
+            const l = 0.4122214708 * r_lin + 0.5363113620 * g_lin + 0.0514875704 * b_lin;
+            const m = 0.2119034982 * r_lin + 0.6806995451 * g_lin + 0.1073969166 * b_lin;
+            const s = 0.0883024619 * r_lin + 0.2817188376 * g_lin + 0.6299787005 * b_lin;
+            
+            // 3. LMS to OKLab
+            const l_ = Math.cbrt(l);
+            const m_ = Math.cbrt(m);
+            const s_ = Math.cbrt(s);
+            
+            const L = 0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_;
+            const a = 1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_;
+            const b_val = 0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_;
+            
+            // 4. OKLab to OKLCH
+            const C = Math.sqrt(a * a + b_val * b_val);
+            let H = Math.atan2(b_val, a) * (180 / Math.PI);
+            if (H < 0) H += 360;
+            
+            return `oklch(${L.toFixed(3)} ${C.toFixed(3)} ${H.toFixed(1)})`;
+        };
+
         const rgbToHex = (r, g, b) => {
             const clamp = (val) => Math.max(0, Math.min(Math.round(val), 255));
             return "#" + [clamp(r), clamp(g), clamp(b)].map(x => {
@@ -173,30 +213,28 @@
         const OFFLINE_DB_KEY = "aura_local_exhaustive_ref";
 
         // ==========================================
-        // MINIMAL COLOR CARD REFERENCE COMPONENT
+        // DESIGN SYSTEM COLOR CARD COMPONENT
         // ==========================================
         const ColorCard = ({ color, onDelete, onEdit }) => {
-            const [copied, setCopied] = useState(false);
+            const [copiedText, setCopiedText] = useState("");
+            const [activeTab, setActiveTab] = useState("primary"); // "primary" | "secondary" | "token"
             const textColor = getOptimalTextColor(color.primary);
 
-            const handleCopy = (e) => {
-                e.stopPropagation();
-                let copyVal = "";
-                if (!color.secondary || color.secondary === color.primary) {
-                    copyVal = color.primary;
-                } else {
-                    copyVal = `linear-gradient(135deg, ${color.primary}, ${color.secondary})`;
-                }
-                
+            const pRgb = color.primaryRgb || hexToRgbString(color.primary);
+            const pOklch = color.primaryOklch || hexToOklchString(color.primary);
+            const sRgb = color.secondaryRgb || hexToRgbString(color.secondary || color.primary);
+            const sOklch = color.secondaryOklch || hexToOklchString(color.secondary || color.primary);
+
+            const handleCopy = (text, label) => {
                 const el = document.createElement('textarea');
-                el.value = copyVal;
+                el.value = text;
                 document.body.appendChild(el);
                 el.select();
                 document.execCommand('copy');
                 document.body.removeChild(el);
 
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1500);
+                setCopiedText(label);
+                setTimeout(() => setCopiedText(""), 1500);
             };
 
             const getCardBackground = () => {
@@ -206,60 +244,336 @@
                 return `linear-gradient(135deg, ${color.primary}, ${color.secondary})`;
             };
 
+            const isGradient = color.secondary && color.secondary !== color.primary;
+
+            const cssVarName = `--color-${color.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+            const tailwindKey = color.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
             return (
-                <div 
-                    onClick={handleCopy}
-                    className="color-card group relative h-28 w-full rounded-xl cursor-pointer flex flex-col justify-between p-3 border border-black/5 dark:border-white/10"
-                    style={{ background: getCardBackground(), color: textColor }}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Copy color definition for ${color.name}`}
-                >
-                    <div className="flex justify-between items-start w-full">
-                        <span className="text-[11px] font-bold tracking-tight uppercase opacity-95 drop-shadow-sm leading-tight max-w-[80%]">
-                            {color.name}
-                        </span>
-                        
-                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                            {onEdit && (
-                                <button 
-                                    onClick={() => onEdit(color)}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 dark:bg-white/20 hover:bg-emerald-600/40 p-1 rounded backdrop-blur-sm"
-                                    title="Edit reference"
-                                >
-                                    <Icon name="edit" size={12} />
-                                </button>
-                            )}
-                            {onDelete && (
-                                <button 
-                                    onClick={() => onDelete(color.id)}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 dark:bg-white/20 hover:bg-red-600/40 p-1 rounded backdrop-blur-sm"
-                                    title="Delete token"
-                                >
-                                    <Icon name="trash" size={12} />
-                                </button>
-                            )}
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 dark:bg-white/20 p-1 rounded backdrop-blur-sm">
-                                {copied ? <Icon name="check" size={12} /> : <Icon name="copy" size={12} />}
+                <div className="color-card group relative flex flex-col rounded-xl overflow-hidden border border-gray-200 dark:border-white/5 bg-white dark:bg-[#0E111A] shadow-sm text-xs">
+                    {/* Visual Color Swatch */}
+                    <div 
+                        className="h-24 w-full relative flex flex-col justify-between p-3 cursor-pointer"
+                        style={{ background: getCardBackground(), color: textColor }}
+                        onClick={() => {
+                            const val = isGradient ? getCardBackground() : color.primary;
+                            handleCopy(val, isGradient ? "Gradient CSS" : "HEX");
+                        }}
+                        title="Click swatch to copy CSS background"
+                    >
+                        <div className="flex justify-between items-start w-full">
+                            <span className="text-[10px] font-bold tracking-tight uppercase opacity-95 drop-shadow-sm leading-tight max-w-[80%] truncate">
+                                {color.name}
+                            </span>
+                            
+                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                {onEdit && (
+                                    <button 
+                                        onClick={() => onEdit(color)}
+                                        className="bg-black/10 dark:bg-white/20 hover:bg-emerald-600/40 p-1 rounded backdrop-blur-sm transition-colors text-white"
+                                        title="Edit reference"
+                                    >
+                                        <Icon name="edit" size={10} />
+                                    </button>
+                                )}
+                                {onDelete && (
+                                    <button 
+                                        onClick={() => onDelete(color.id)}
+                                        className="bg-black/10 dark:bg-white/20 hover:bg-red-600/40 p-1 rounded backdrop-blur-sm transition-colors text-white"
+                                        title="Delete token"
+                                    >
+                                        <Icon name="trash" size={10} />
+                                    </button>
+                                )}
                             </div>
                         </div>
+
+                        <div className="text-[8px] font-mono opacity-80 font-bold uppercase tracking-wider">
+                            {isGradient ? "Gradient" : "Solid"}
+                        </div>
                     </div>
-                    
-                    <div className="flex justify-between items-end w-full text-[10px] font-mono opacity-90 font-semibold tracking-wider">
-                        <span>{color.primary}</span>
-                        {color.secondary && color.secondary !== color.primary && (
-                            <>
-                                <span>➔</span>
-                                <span>{color.secondary}</span>
-                            </>
+
+                    {/* Specs Tab switcher */}
+                    <div className="flex border-b border-gray-150 dark:border-white/5 bg-gray-100 dark:bg-[#0A0C14] text-[9px] font-semibold text-gray-500">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("primary")}
+                            className={`flex-1 py-1 text-center transition-colors ${activeTab === 'primary' ? 'bg-white dark:bg-[#111420] text-emerald-600 dark:text-emerald-400 font-bold' : 'hover:text-gray-800 dark:hover:text-gray-300'}`}
+                        >
+                            {isGradient ? "Primary" : "Specs"}
+                        </button>
+                        {isGradient && (
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("secondary")}
+                                className={`flex-1 py-1 text-center transition-colors ${activeTab === 'secondary' ? 'bg-white dark:bg-[#111420] text-emerald-600 dark:text-emerald-400 font-bold' : 'hover:text-gray-800 dark:hover:text-gray-300'}`}
+                            >
+                                Secondary
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("token")}
+                            className={`flex-1 py-1 text-center transition-colors ${activeTab === 'token' ? 'bg-white dark:bg-[#111420] text-emerald-600 dark:text-emerald-400 font-bold' : 'hover:text-gray-800 dark:hover:text-gray-300'}`}
+                        >
+                            Token
+                        </button>
+                    </div>
+
+                    {/* Content Area (uniform height h-[92px]) */}
+                    <div className="p-2.5 h-[92px] bg-gray-50 dark:bg-[#111420] text-[9.5px] overflow-hidden flex flex-col justify-center">
+                        {activeTab === 'primary' && (
+                            <div className="space-y-1 font-mono">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-400">HEX</span>
+                                    <button type="button" onClick={() => handleCopy(color.primary, "HEX")} className="text-gray-700 dark:text-gray-300 hover:text-emerald-500 font-bold">{color.primary}</button>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-400">RGB</span>
+                                    <button type="button" onClick={() => handleCopy(pRgb, "RGB")} className="text-gray-600 dark:text-gray-400 hover:text-emerald-500 font-bold truncate max-w-[85%]">{pRgb}</button>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-400">OKLCH</span>
+                                    <button type="button" onClick={() => handleCopy(pOklch, "OKLCH")} className="text-gray-600 dark:text-gray-400 hover:text-emerald-500 font-bold truncate max-w-[85%]">{pOklch}</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'secondary' && isGradient && (
+                            <div className="space-y-1 font-mono">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-400">HEX</span>
+                                    <button type="button" onClick={() => handleCopy(color.secondary, "HEX")} className="text-gray-700 dark:text-gray-300 hover:text-emerald-500 font-bold">{color.secondary}</button>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-400">RGB</span>
+                                    <button type="button" onClick={() => handleCopy(sRgb, "RGB")} className="text-gray-600 dark:text-gray-400 hover:text-emerald-500 font-bold truncate max-w-[85%]">{sRgb}</button>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-400">OKLCH</span>
+                                    <button type="button" onClick={() => handleCopy(sOklch, "OKLCH")} className="text-gray-600 dark:text-gray-400 hover:text-emerald-500 font-bold truncate max-w-[85%]">{sOklch}</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'token' && (
+                            <div className="space-y-1 font-mono">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-400" title="CSS Variable">CSS</span>
+                                    <button type="button" onClick={() => handleCopy(cssVarName, "CSS Var")} className="text-gray-700 dark:text-gray-300 hover:text-emerald-500 font-bold truncate max-w-[85%]" title={cssVarName}>{cssVarName}</button>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-400" title="Tailwind Config Key">TW</span>
+                                    <button type="button" onClick={() => handleCopy(tailwindKey, "Tailwind Key")} className="text-gray-600 dark:text-gray-400 hover:text-emerald-500 font-bold truncate max-w-[85%]" title={tailwindKey}>{tailwindKey}</button>
+                                </div>
+                            </div>
                         )}
                     </div>
-                    
-                    {copied && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/25 dark:bg-white/20 backdrop-blur-[2px] rounded-xl z-20">
-                            <span className="font-bold text-xs tracking-widest uppercase">Copied</span>
+
+                    {/* Copy Notification Toast */}
+                    {copiedText && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 dark:bg-black/90 text-white z-20 transition-all duration-200">
+                            <Icon name="check" size={14} className="text-emerald-400 mb-1" />
+                            <span className="font-bold text-[9px] tracking-wider uppercase">{copiedText} Copied!</span>
                         </div>
                     )}
+                </div>
+            );
+        };
+
+        // ==========================================
+        // DESIGN SYSTEM EXPORTS VIEW COMPONENT
+        // ==========================================
+        const DesignSystemExports = ({ colors, showToast }) => {
+            const [exportTab, setExportTab] = useState("css"); // "css" | "tailwind" | "json"
+            const [copied, setCopied] = useState(false);
+
+            const nameToCssVar = (name) => {
+                return `--color-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+            };
+
+            const nameToTailwindKey = (name) => {
+                return name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            };
+
+            const cssContent = useMemo(() => {
+                let code = `:root {\n`;
+                code += `  /* Design System Color Tokens */\n\n`;
+                colors.forEach(c => {
+                    const varName = nameToCssVar(c.name);
+                    const pRgb = c.primaryRgb || hexToRgbString(c.primary);
+                    const pOklch = c.primaryOklch || hexToOklchString(c.primary);
+                    const isGradient = c.secondary && c.secondary !== c.primary;
+
+                    code += `  /* ${c.name} (${c.group}) */\n`;
+                    code += `  ${varName}-hex: ${c.primary};\n`;
+                    code += `  ${varName}-rgb: ${pRgb.replace('rgb(', '').replace(')', '')};\n`;
+                    code += `  ${varName}-oklch: ${pOklch.replace('oklch(', '').replace(')', '')};\n`;
+                    
+                    if (isGradient) {
+                        const sRgb = c.secondaryRgb || hexToRgbString(c.secondary);
+                        const sOklch = c.secondaryOklch || hexToOklchString(c.secondary);
+                        code += `  ${varName}-sec-hex: ${c.secondary};\n`;
+                        code += `  ${varName}-sec-rgb: ${sRgb.replace('rgb(', '').replace(')', '')};\n`;
+                        code += `  ${varName}-sec-oklch: ${sOklch.replace('oklch(', '').replace(')', '')};\n`;
+                        code += `  ${varName}-gradient: linear-gradient(135deg, ${c.primary}, ${c.secondary});\n`;
+                    }
+                    code += `\n`;
+                });
+                code += `}`;
+                return code;
+            }, [colors]);
+
+            const tailwindContent = useMemo(() => {
+                let code = `module.exports = {\n`;
+                code += `  theme: {\n`;
+                code += `    extend: {\n`;
+                code += `      colors: {\n`;
+                
+                colors.forEach(c => {
+                    const key = nameToTailwindKey(c.name);
+                    const varName = nameToCssVar(c.name);
+                    const isGradient = c.secondary && c.secondary !== c.primary;
+
+                    if (isGradient) {
+                        code += `        '${key}': {\n`;
+                        code += `          start: 'var(${varName}-hex)',\n`;
+                        code += `          end: 'var(${varName}-sec-hex)',\n`;
+                        code += `        },\n`;
+                    } else {
+                        code += `        '${key}': 'var(${varName}-hex)',\n`;
+                    }
+                });
+                
+                code += `      },\n`;
+                code += `      backgroundImage: {\n`;
+                colors.forEach(c => {
+                    const isGradient = c.secondary && c.secondary !== c.primary;
+                    if (isGradient) {
+                        const key = nameToTailwindKey(c.name);
+                        const varName = nameToCssVar(c.name);
+                        code += `        'gradient-${key}': 'var(${varName}-gradient)',\n`;
+                    }
+                });
+                code += `      }\n`;
+                code += `    }\n`;
+                code += `  }\n`;
+                code += `}`;
+                return code;
+            }, [colors]);
+
+            const jsonContent = useMemo(() => {
+                const formatted = colors.map(c => {
+                    const isGradient = c.secondary && c.secondary !== c.primary;
+                    return {
+                        id: c.id,
+                        name: c.name,
+                        group: c.group,
+                        system: !!c.system,
+                        createdAt: c.createdAt,
+                        primary: {
+                            hex: c.primary,
+                            rgb: c.primaryRgb || hexToRgbString(c.primary),
+                            oklch: c.primaryOklch || hexToOklchString(c.primary)
+                        },
+                        secondary: isGradient ? {
+                            hex: c.secondary,
+                            rgb: c.secondaryRgb || hexToRgbString(c.secondary),
+                            oklch: c.secondaryOklch || hexToOklchString(c.secondary)
+                        } : null,
+                        cssVariable: nameToCssVar(c.name)
+                    };
+                });
+                return JSON.stringify(formatted, null, 2);
+            }, [colors]);
+
+            const activeContent = useMemo(() => {
+                if (exportTab === "css") return cssContent;
+                if (exportTab === "tailwind") return tailwindContent;
+                return jsonContent;
+            }, [exportTab, cssContent, tailwindContent, jsonContent]);
+
+            const handleCopyAll = () => {
+                const el = document.createElement('textarea');
+                el.value = activeContent;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+
+                setCopied(true);
+                showToast("Design tokens copied to clipboard!", "success");
+                setTimeout(() => setCopied(false), 2000);
+            };
+
+            return (
+                <div className="bg-white dark:bg-[#0E111A] rounded-xl border border-gray-200 dark:border-white/5 overflow-hidden flex flex-col md:flex-row h-[600px] shadow-lg animate-fade-in text-xs">
+                    {/* Navigation Sidebar */}
+                    <div className="w-full md:w-64 bg-gray-50 dark:bg-[#111420] border-r border-gray-200 dark:border-white/5 p-4 flex flex-col justify-between shrink-0">
+                        <div className="space-y-4">
+                            <div>
+                                <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-[10px]">Format Options</h3>
+                                <p className="text-[10px] text-gray-500">Select design system target format</p>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <button
+                                    type="button"
+                                    onClick={() => setExportTab("css")}
+                                    className={`w-full text-left px-3 py-2.5 rounded-lg font-semibold flex items-center justify-between transition-colors ${exportTab === "css" ? "bg-emerald-600 text-white" : "hover:bg-gray-200 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300"}`}
+                                >
+                                    <span>CSS Variables (:root)</span>
+                                    <span className="font-mono text-[9px] opacity-75">.css</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setExportTab("tailwind")}
+                                    className={`w-full text-left px-3 py-2.5 rounded-lg font-semibold flex items-center justify-between transition-colors ${exportTab === "tailwind" ? "bg-emerald-600 text-white" : "hover:bg-gray-200 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300"}`}
+                                >
+                                    <span>Tailwind Config</span>
+                                    <span className="font-mono text-[9px] opacity-75">.js</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setExportTab("json")}
+                                    className={`w-full text-left px-3 py-2.5 rounded-lg font-semibold flex items-center justify-between transition-colors ${exportTab === "json" ? "bg-emerald-600 text-white" : "hover:bg-gray-200 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300"}`}
+                                >
+                                    <span>JSON Design Tokens</span>
+                                    <span className="font-mono text-[9px] opacity-75">.json</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="pt-4 border-t border-gray-200 dark:border-white/5 space-y-2">
+                            <button
+                                type="button"
+                                onClick={handleCopyAll}
+                                className="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center justify-center gap-2 transition-all"
+                            >
+                                {copied ? <Icon name="check" size={14} /> : <Icon name="copy" size={14} />}
+                                <span>Copy Code</span>
+                            </button>
+                            <p className="text-[9px] text-gray-500 leading-relaxed text-center">
+                                Easily drop these tokens into your project styles or layout files.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Code Display Area */}
+                    <div className="flex-1 flex flex-col bg-[#05070C] text-gray-100 overflow-hidden relative">
+                        {/* Tab header bar */}
+                        <div className="bg-[#121623] px-4 py-2 border-b border-white/5 flex justify-between items-center shrink-0">
+                            <span className="font-mono text-[10px] text-gray-400">
+                                {exportTab === 'css' ? 'variables.css' : exportTab === 'tailwind' ? 'tailwind.config.js' : 'tokens.json'}
+                            </span>
+                            <span className="text-[9px] uppercase font-mono tracking-widest text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                                Ready to integrate
+                            </span>
+                        </div>
+                        {/* Code container */}
+                        <pre className="flex-1 p-5 overflow-auto font-mono text-[11px] leading-relaxed selection:bg-emerald-600 selection:text-white">
+                            <code>{activeContent}</code>
+                        </pre>
+                    </div>
                 </div>
             );
         };
@@ -405,7 +719,15 @@
                             .get();
                         const loaded = [];
                         snapshot.forEach(doc => {
-                            loaded.push({ id: doc.id, ...doc.data() });
+                            const data = doc.data();
+                            loaded.push({ 
+                                id: doc.id, 
+                                ...data,
+                                primaryRgb: data.primaryRgb || hexToRgbString(data.primary),
+                                primaryOklch: data.primaryOklch || hexToOklchString(data.primary),
+                                secondaryRgb: data.secondaryRgb || hexToRgbString(data.secondary || data.primary),
+                                secondaryOklch: data.secondaryOklch || hexToOklchString(data.secondary || data.primary)
+                            });
                         });
                         setColors(loaded);
                         showToast("Colors loaded from Cloud Database.", "success");
@@ -424,7 +746,15 @@
                 const raw = localStorage.getItem(OFFLINE_DB_KEY);
                 if (raw) {
                     try {
-                        setColors(JSON.parse(raw));
+                        const parsed = JSON.parse(raw);
+                        const enriched = parsed.map(c => ({
+                            ...c,
+                            primaryRgb: c.primaryRgb || hexToRgbString(c.primary),
+                            primaryOklch: c.primaryOklch || hexToOklchString(c.primary),
+                            secondaryRgb: c.secondaryRgb || hexToRgbString(c.secondary || c.primary),
+                            secondaryOklch: c.secondaryOklch || hexToOklchString(c.secondary || c.primary)
+                        }));
+                        setColors(enriched);
                     } catch (e) {
                         setColors([]);
                     }
@@ -516,6 +846,10 @@
                                     name: color.name,
                                     primary: color.primary,
                                     secondary: color.secondary,
+                                    primaryRgb: color.primaryRgb || hexToRgbString(color.primary),
+                                    primaryOklch: color.primaryOklch || hexToOklchString(color.primary),
+                                    secondaryRgb: color.secondaryRgb || hexToRgbString(color.secondary || color.primary),
+                                    secondaryOklch: color.secondaryOklch || hexToOklchString(color.secondary || color.primary),
                                     group: color.group,
                                     createdAt: color.createdAt,
                                     userId: user.uid,
@@ -529,6 +863,10 @@
                         // Seed localStorage sandbox
                         const formattedList = seedList.map(c => ({
                             ...c,
+                            primaryRgb: c.primaryRgb || hexToRgbString(c.primary),
+                            primaryOklch: c.primaryOklch || hexToOklchString(c.primary),
+                            secondaryRgb: c.secondaryRgb || hexToRgbString(c.secondary || c.primary),
+                            secondaryOklch: c.secondaryOklch || hexToOklchString(c.secondary || c.primary),
                             userId: "sandbox"
                         }));
                         localStorage.setItem(OFFLINE_DB_KEY, JSON.stringify(formattedList));
@@ -572,6 +910,10 @@
                         name: newName,
                         primary: newPrimary,
                         secondary: newSecondary || newPrimary,
+                        primaryRgb: hexToRgbString(newPrimary),
+                        primaryOklch: hexToOklchString(newPrimary),
+                        secondaryRgb: hexToRgbString(newSecondary || newPrimary),
+                        secondaryOklch: hexToOklchString(newSecondary || newPrimary),
                         group: finalGroup,
                         createdAt: editingColor.createdAt || Date.now(), // Preserve timestamp
                         updatedAt: Date.now(),
@@ -597,6 +939,10 @@
                         name: newName,
                         primary: newPrimary,
                         secondary: newSecondary || newPrimary,
+                        primaryRgb: hexToRgbString(newPrimary),
+                        primaryOklch: hexToOklchString(newPrimary),
+                        secondaryRgb: hexToRgbString(newSecondary || newPrimary),
+                        secondaryOklch: hexToOklchString(newSecondary || newPrimary),
                         group: finalGroup,
                         createdAt: Date.now(),
                         userId: user ? user.uid : "sandbox"
@@ -963,16 +1309,25 @@
                             <div className="flex flex-wrap gap-2 items-center">
                                 <div className="flex gap-1 bg-gray-200 dark:bg-white/5 p-1 rounded-lg text-xs font-semibold">
                                     <button 
+                                        type="button"
                                         onClick={() => setSortMode('LAYOUT')}
                                         className={`px-3 py-1.5 rounded-md transition-colors ${sortMode === 'LAYOUT' ? 'bg-white dark:bg-[#0E111A] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
                                     >
                                         UI Layout Locations
                                     </button>
                                     <button 
+                                        type="button"
                                         onClick={() => setSortMode('HARMONIES')}
                                         className={`px-3 py-1.5 rounded-md transition-colors ${sortMode === 'HARMONIES' ? 'bg-white dark:bg-[#0E111A] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
                                     >
                                         Color Theory Harmonies
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setSortMode('DESIGN_SYSTEM')}
+                                        className={`px-3 py-1.5 rounded-md transition-colors ${sortMode === 'DESIGN_SYSTEM' ? 'bg-white dark:bg-[#0E111A] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                                    >
+                                        Design System Exports
                                     </button>
                                 </div>
 
@@ -993,7 +1348,7 @@
                             </div>
 
                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest font-mono self-end">
-                                Grouping: {sortMode === 'LAYOUT' ? 'Dashboard Component Mapping' : 'Mathematical HSL Harmonization'}
+                                Grouping: {sortMode === 'LAYOUT' ? 'Dashboard Component Mapping' : sortMode === 'HARMONIES' ? 'Mathematical HSL Harmonization' : 'CSS / Tailwind / JSON Tokens'}
                             </span>
                         </div>
 
@@ -1015,36 +1370,38 @@
                                     <span>Seed 160 Default Colors</span>
                                 </button>
                             </div>
+                        )}                        {/* CATALOG GRID MATRIX OR DESIGN SYSTEM PANEL */}
+                        {sortMode === 'DESIGN_SYSTEM' ? (
+                            <DesignSystemExports colors={colors} showToast={showToast} />
+                        ) : (
+                            <div className="space-y-12">
+                                {groupedColorData.map((group, idx) => (
+                                    <section key={idx} className="animate-fade-in">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <h3 className="text-xs font-extrabold uppercase tracking-wider text-emerald-500 font-mono">{group.group}</h3>
+                                            <div className="h-px flex-1 bg-gradient-to-r from-gray-200 dark:from-white/10 to-transparent"></div>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 animate-fade-in">
+                                            {group.colors.map((color, cIdx) => (
+                                                <ColorCard 
+                                                    key={color.id || cIdx} 
+                                                    color={color} 
+                                                    onDelete={handleDeleteColor}
+                                                    onEdit={handleEditClick}
+                                                />
+                                            ))}
+                                        </div>
+                                    </section>
+                                ))}
+                                
+                                {colors.length > 0 && groupedColorData.length === 0 && (
+                                    <div className="text-center py-20 text-gray-500 dark:text-gray-400 text-sm">
+                                        No colors found matching search criteria.
+                                    </div>
+                                )}
+                            </div>
                         )}
-
-                        {/* CATALOG GRID MATRIX */}
-                        <div className="space-y-12">
-                            {groupedColorData.map((group, idx) => (
-                                <section key={idx} className="animate-fade-in">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <h3 className="text-xs font-extrabold uppercase tracking-wider text-emerald-500 font-mono">{group.group}</h3>
-                                        <div className="h-px flex-1 bg-gradient-to-r from-gray-200 dark:from-white/10 to-transparent"></div>
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 animate-fade-in">
-                                        {group.colors.map((color, cIdx) => (
-                                            <ColorCard 
-                                                key={color.id || cIdx} 
-                                                color={color} 
-                                                onDelete={handleDeleteColor}
-                                                onEdit={handleEditClick}
-                                            />
-                                        ))}
-                                    </div>
-                                </section>
-                            ))}
-                            
-                            {colors.length > 0 && groupedColorData.length === 0 && (
-                                <div className="text-center py-20 text-gray-500 dark:text-gray-400 text-sm">
-                                    No colors found matching search criteria.
-                                </div>
-                            )}
-                        </div>
 
                     </main>
 
